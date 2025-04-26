@@ -59,6 +59,59 @@ Cette approche garantit une gestion logique et une organisation efficace des don
 - **Performances améliorées** pour les opérations d'insertion, qui sont équivalentes à celles d'une table standard.
 - **Maintenance facilitée** : Les opérations sur des partitions spécifiques, telles que l'archivage ou la suppression de données, sont plus simples à réaliser.
 
+Voici la section réécrite et enrichie en tenant compte de ta demande, avec un focus sur **SQL Server** et **Oracle**, et en développant clairement l’idée que **le partitionnement permet de scanner moins de données**, améliorant ainsi fortement les performances des requêtes :
+
+---
+
+## 3.1 Accélération des Requêtes par Réduction de Données Scannées
+
+L’un des bénéfices majeurs du partitionnement déclaratif réside dans **l’amélioration significative des performances des requêtes** grâce à une technique appelée **élagage de partitions** (ou _partition pruning_). Ce mécanisme permet aux moteurs de bases de données comme **SQL Server** et **Oracle** de **scanner uniquement les partitions pertinentes**, plutôt que de parcourir toute la table, ce qui réduit drastiquement la quantité de données lues en mémoire et donc le temps d'exécution des requêtes.
+
+### 🎯 Principe de fonctionnement
+
+Lorsqu’une requête contient une clause de filtrage (ex: `WHERE event_date BETWEEN '2025-01-01' AND '2025-12-31'`), **le moteur identifie automatiquement les partitions concernées** par ce critère — par exemple, uniquement la partition contenant les données de 2025. Il évite ainsi l’accès aux autres partitions inutiles.
+
+Cette optimisation est prise en charge nativement par :
+
+- **Oracle** : via le **Partition Pruning** automatique, à la compilation ou à l’exécution selon la nature des filtres.
+- **SQL Server** : via le mécanisme de **Partition Elimination**, qui s’active si les filtres sont compatibles avec la clé de partition et bien exprimés dans la requête.
+
+### 📌 Exemple concret (Oracle)
+
+```sql
+SELECT * FROM event_schedule
+WHERE event_date BETWEEN TO_DATE('2025-01-01','YYYY-MM-DD') AND TO_DATE('2025-12-31','YYYY-MM-DD');
+```
+
+Si la table est partitionnée par année, Oracle ne consultera **que la partition `event_2025`**.
+
+### 📌 Exemple concret (SQL Server)
+
+```sql
+SELECT * FROM event_schedule
+WHERE event_date >= '2025-01-01' AND event_date < '2026-01-01';
+```
+
+Dans SQL Server, cette condition est compatible avec la **Partition Function** définie, ce qui déclenche l’**elimination** des partitions en dehors de 2025.
+
+---
+
+### 🚀 Gains mesurables en performance
+
+- **Réduction du volume de données scannées** : des requêtes qui portaient sur des centaines de millions de lignes peuvent être restreintes à quelques millions.
+- **Plans d'exécution plus efficaces** : moins de lectures disque, moins de chargement en mémoire.
+- **Moins de contention I/O** : en minimisant le volume traité, les performances globales du système s’en trouvent améliorées, surtout en contexte OLAP ou reporting.
+
+---
+
+### 🛠️ Astuce : comment bien profiter du partition pruning
+
+Pour tirer pleinement parti de cette optimisation :
+
+- Les colonnes utilisées dans les clauses `WHERE` doivent **correspondre exactement à la clé de partitionnement**.
+- Les valeurs doivent être **statiquement connues** à la compilation (ou convertibles facilement).
+- Éviter les expressions non-sargables (ex: `CAST(date_col AS VARCHAR)`) qui peuvent **désactiver l’élagage**.
+
 ---
 
 # 4. Limitations du Partitionnement Déclaratif
@@ -211,6 +264,109 @@ Systèmes enregistrant des données à fort volume mais faible durée de vie (ex
 - **Utiliser l'élagage de partitions ("partition pruning")** : S'assurer que les requêtes bénéficient des optimisations possibles.
 - **Automatiser la gestion des partitions** : Scripts pour ajouter/supprimer des partitions de manière périodique.
 - **Surveiller les statistiques** : Recalibrer régulièrement les statistiques pour garantir des plans de requêtes optimaux.
+
+---
+
+# 9. Gestion des Très Grandes Volumétries de Partitions (SQL Server et Oracle)
+
+Dans SQL Server et Oracle, il est courant d’avoir besoin de **gérer plusieurs centaines voire milliers de partitions**, notamment pour des systèmes transactionnels volumineux, des entrepôts de données ou des plateformes IoT. Toutefois, **un nombre excessif de partitions** peut **négativement impacter les performances** internes et la maintenance.
+
+## 9.1 Pourquoi trop de partitions pose problème ?
+
+- **Coût du planificateur de requêtes** : Chaque requête doit analyser la liste des partitions potentielles, augmentant le temps de compilation du plan d’exécution.
+- **Augmentation de la consommation mémoire** : Chaque partition implique des métadonnées supplémentaires à charger en RAM.
+- **Maintenance plus complexe** : Opérations d’ajout, de fusion, ou de suppression de partitions deviennent longues et potentiellement risquées.
+- **Dégradation des performances d'index** : Les index partitionnés peuvent devenir difficiles à maintenir si le nombre de partitions devient trop élevé.
+
+---
+
+## 9.2 Stratégies pour contourner la limite
+
+### 1. Partitionnement Composite (Multi-niveaux)
+
+Tant sous SQL Server que sous Oracle, il est recommandé d’utiliser **des partitionnements composites** (Range-Hash, Range-List) pour limiter le nombre de partitions directement visibles :
+
+- **Oracle** : `PARTITION BY RANGE (...) SUBPARTITION BY LIST(...)` ou `SUBPARTITION BY HASH(...)`
+- **SQL Server** : Usage combiné de **fonctions de partitionnement** (Partition Function) avec **schémas de partition** (Partition Scheme).
+
+**Exemple Oracle** :
+
+```sql
+CREATE TABLE sales_data (
+    sale_id NUMBER,
+    sale_date DATE,
+    region VARCHAR2(20)
+)
+PARTITION BY RANGE (sale_date)
+SUBPARTITION BY LIST (region)
+SUBPARTITION TEMPLATE (
+    SUBPARTITION europe VALUES ('EU'),
+    SUBPARTITION americas VALUES ('US', 'CA', 'MX')
+)
+(
+    PARTITION sales_2024 VALUES LESS THAN (TO_DATE('2025-01-01', 'YYYY-MM-DD')),
+    PARTITION sales_2025 VALUES LESS THAN (TO_DATE('2026-01-01', 'YYYY-MM-DD'))
+);
+```
+
+**Exemple SQL Server** :
+
+Dans SQL Server, on simule en partie ce comportement via **plusieurs Partition Functions** combinées à une logique applicative plus fine, bien que la subpartition explicite n’existe pas nativement.
+
+---
+
+### 2. Limiter la Rétention Active
+
+Dans les deux systèmes, il est stratégique de ne conserver que les **données actives** dans la table partitionnée principale.
+
+- **Oracle** : Utilisation de **`ALTER TABLE ... DROP PARTITION`** pour purger les anciennes partitions rapidement sans scan de table.
+- **SQL Server** : Utilisation de **`ALTER PARTITION FUNCTION ... MERGE RANGE`** pour fusionner ou supprimer proprement des intervalles obsolètes.
+
+**Exemples** :
+
+- Oracle :
+
+```sql
+ALTER TABLE sales_data DROP PARTITION sales_2022;
+```
+
+- SQL Server :
+
+```sql
+ALTER PARTITION FUNCTION pf_sales_date() MERGE RANGE ('2022-12-31');
+```
+
+---
+
+### 3. Utiliser un Partitionnement Plus Grossier
+
+Si le besoin en granularité le permet, il est préférable de **partitionner par mois ou trimestre** plutôt que par jour.
+
+- **Oracle** : Utilisation de `INTERVAL` automatique sur des mois par exemple.
+- **SQL Server** : Définition d’une **Partition Function** basée sur des points clés (fin de mois).
+
+Cela réduit naturellement le nombre total de partitions créées sur plusieurs années.
+
+---
+
+### 4. Tirer Parti du Pruning Dynamique
+
+- **Oracle** gère le **Partition Pruning** de manière automatique lors de l'exécution, avec ou sans filtre statique.
+- **SQL Server** supporte également un **Partition Elimination** durant la compilation et parfois l’exécution de requêtes si les conditions sont dynamiques.
+
+Cela permet aux moteurs d'interroger uniquement les partitions pertinentes sans parcourir toutes les partitions existantes, limitant l'impact d’un grand nombre de partitions.
+
+---
+
+## 9.3 Bonnes pratiques spécifiques à SQL Server et Oracle
+
+| Bonnes Pratiques                      | SQL Server                                       | Oracle                                     |
+| ------------------------------------- | ------------------------------------------------ | ------------------------------------------ |
+| Préférer une granularité raisonnable  | Partitionner par mois/trimestre                  | Partitionner par intervalle annuel/mensuel |
+| Purger les anciennes partitions       | MERGE RANGE sur la Partition Function            | DROP PARTITION                             |
+| Utiliser des schémas optimisés        | Partition Scheme aligné avec groupes de fichiers | Tablespaces spécifiques par partition      |
+| Favoriser l’élimination de partitions | Conditions bien écrites dans les requêtes        | Support natif automatique                  |
+| Automatiser la maintenance            | Jobs SQL Agent pour scripts partition            | Jobs DBMS_SCHEDULER pour archivage / purge |
 
 ---
 
