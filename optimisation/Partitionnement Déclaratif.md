@@ -58,9 +58,6 @@ Cette approche garantit une gestion logique et une organisation efficace des don
 - **Optimisation des requêtes** : Les requêtes peuvent être optimisées grâce à l'élagage des partitions, c'est-à-dire la réduction du nombre de partitions explorées pendant l'exécution de la requête.
 - **Performances améliorées** pour les opérations d'insertion, qui sont équivalentes à celles d'une table standard.
 - **Maintenance facilitée** : Les opérations sur des partitions spécifiques, telles que l'archivage ou la suppression de données, sont plus simples à réaliser.
-
-Voici la section réécrite et enrichie en tenant compte de ta demande, avec un focus sur **SQL Server** et **Oracle**, et en développant clairement l’idée que **le partitionnement permet de scanner moins de données**, améliorant ainsi fortement les performances des requêtes :
-
 ---
 
 ## 3.1 Accélération des Requêtes par Réduction de Données Scannées
