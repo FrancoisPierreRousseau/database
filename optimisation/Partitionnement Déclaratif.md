@@ -127,6 +127,93 @@ La gestion des partitions varie selon les systèmes, mais les actions fondamenta
 
 ---
 
+# 7. Cas Pratiques d’Utilisation du Partitionnement Déclaratif
+
+Le partitionnement déclaratif trouve de nombreuses applications concrètes dans les systèmes de bases de données relationnelles, en particulier lorsqu’il s'agit de manipuler de grandes quantités de données. Voici quelques scénarios typiques :
+
+## 7.1 Archivage de Données Historiques
+
+**Contexte** :  
+Dans des systèmes enregistrant de grandes volumétries de données historiques (logs, mesures IoT, transactions financières, etc.), les données anciennes deviennent rarement consultées.
+
+**Solution avec partitionnement** :
+
+- Utiliser un **partitionnement par plage (RANGE)** basé sur une date (`logdate`, `transaction_date`, etc.).
+- Permettre la suppression rapide des anciennes partitions (ex: `DETACH PARTITION` ou `DROP PARTITION`), réduisant ainsi la taille active de la table principale.
+
+**Exemple** :
+
+- Partitionner une table de journaux système par année.
+- Archiver puis supprimer facilement toutes les partitions de l'année 2020.
+
+## 7.2 Gestion de Catalogues Produits
+
+**Contexte** :  
+Dans un site e-commerce international, les produits peuvent être catégorisés par **région** ou **type de produit**.
+
+**Solution avec partitionnement** :
+
+- Utiliser un **partitionnement LIST** sur des catégories (`electronics`, `clothing`, `furniture`) ou des régions (`Europe`, `Americas`, `Asia`).
+- Optimiser les recherches ciblées par segment sans surcharger la table complète.
+
+**Exemple** :
+
+- Une requête sur les produits `electronics` n'explore que la partition correspondante, accélérant les temps de réponse.
+
+## 7.3 Gestion de Données Multi-Tenants
+
+**Contexte** :  
+Applications SaaS (Software as a Service) hébergeant plusieurs clients (tenants) sur la même base.
+
+**Solution avec partitionnement** :
+
+- **Partitionner par client_id** en utilisant **HASH** ou **LIST**.
+- Faciliter la maintenance, l’export ou la suppression des données d'un client spécifique sans impact sur les autres.
+
+**Exemple** :
+
+- Lorsqu'un client quitte le service, il suffit de détacher sa partition pour extraire toutes ses données.
+
+## 7.4 Accélération de l'Analyse Temporelle
+
+**Contexte** :  
+Outils de Business Intelligence analysant des milliards de lignes de données temporelles.
+
+**Solution avec partitionnement** :
+
+- Utiliser un **partitionnement RANGE** par mois ou trimestre.
+- Couplé avec des index locaux aux partitions pour maximiser la rapidité des requêtes analytiques.
+
+**Exemple** :
+
+- Générer des rapports trimestriels sans balayer inutilement plusieurs années de données.
+
+## 7.5 Traitement de Données Volatiles
+
+**Contexte** :  
+Systèmes enregistrant des données à fort volume mais faible durée de vie (ex: capteurs en temps réel, trading haute fréquence).
+
+**Solution avec partitionnement** :
+
+- Partitionner par intervalle court (jour, semaine).
+- Purger automatiquement les partitions anciennes au fur et à mesure pour limiter la taille de la base.
+
+**Exemple** :
+
+- Dans un système de collecte de mesures météo, supprimer les partitions âgées de plus de 30 jours.
+
+---
+
+# 8. Bonnes Pratiques pour le Partitionnement Déclaratif
+
+- **Prévoir la stratégie de partitionnement dès la conception** : Changer la clé de partitionnement plus tard est complexe.
+- **Limiter le nombre de partitions** : Trop de partitions dégrade les performances de gestion interne.
+- **Utiliser l'élagage de partitions ("partition pruning")** : S'assurer que les requêtes bénéficient des optimisations possibles.
+- **Automatiser la gestion des partitions** : Scripts pour ajouter/supprimer des partitions de manière périodique.
+- **Surveiller les statistiques** : Recalibrer régulièrement les statistiques pour garantir des plans de requêtes optimaux.
+
+---
+
 **Conclusion :**
 
 Le partitionnement déclaratif est un outil puissant pour gérer de très grandes tables en bases de données relationnelles, offrant des avantages significatifs en termes de performances et de maintenance. Chaque SGBD propose des mécanismes et des limitations qui nécessitent une attention particulière lors de la conception d'une architecture partitionnée. Le choix de la solution dépendra des spécificités du système et des exigences de l’application.
