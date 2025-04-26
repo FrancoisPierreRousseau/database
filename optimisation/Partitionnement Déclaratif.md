@@ -54,7 +54,7 @@ Cette approche garantit une gestion logique et une organisation efficace des don
 # 3. Avantages du Partitionnement Déclaratif
 
 - **Routage transparent** des nouvelles données vers la partition appropriée lors des opérations d'insertion.
-- **Héritage des contraintes** : Les index, contraintes et triggers sont hérités par les partitions, ce qui garantit la cohérence des données.
+- **Héritage des contraintes** : Contrairement à ce qui est souvent supposé, dans certains systèmes comme PostgreSQL, les contraintes et triggers ne sont pas automatiquement hérités par les partitions. Les administrateurs doivent spécifiquement définir des contraintes et triggers sur chaque partition. Cela peut entraîner une gestion manuelle et un risque d'incohérences si ces éléments ne sont pas correctement appliqués à toutes les partitions.
 - **Optimisation des requêtes** : Les requêtes peuvent être optimisées grâce à l'élagage des partitions, c'est-à-dire la réduction du nombre de partitions explorées pendant l'exécution de la requête.
 - **Performances améliorées** pour les opérations d'insertion, qui sont équivalentes à celles d'une table standard.
 - **Maintenance facilitée** : Les opérations sur des partitions spécifiques, telles que l'archivage ou la suppression de données, sont plus simples à réaliser.
