@@ -1,5 +1,3 @@
----
-
 # 7. Concepts Avancés
 
 ## 7.1 GROUPING SETS
