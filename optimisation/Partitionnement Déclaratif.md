@@ -138,15 +138,91 @@ Bien que le partitionnement déclaratif apporte de nombreux avantages, il compor
 
 ## 4.3 Restrictions sur les Clés Étrangères et les Triggers
 
-- **Problème** :  
-  Certaines fonctionnalités classiques comme les **clés étrangères** (`FOREIGN KEY`) et certains **triggers complexes** sont soit restreintes, soit interdites sur les tables partitionnées selon le SGBD :
-  - **PostgreSQL** : Les clés étrangères vers une table partitionnée ne sont pas supportées nativement.
-  - **Oracle** et **SQL Server** : Les clés étrangères sont supportées mais peuvent impliquer des coûts de performance élevés.
-- **Conséquence** :
-  - Les relations entre tables peuvent devenir difficiles à maintenir sans recourir à des validations manuelles.
-- **Solutions possibles** :
-  - Remplacer les contraintes physiques par des vérifications applicatives ou des triggers manuels contrôlés.
-  - Limiter les cas d’usage nécessitant des relations fortes entre grandes tables partitionnées.
+Lorsqu'une table est **partitionnée**, certains comportements classiques des **clés étrangères** et des **triggers** deviennent limités ou plus complexes à mettre en œuvre :
+
+### 🔸 Clés Étrangères
+
+- Dans **PostgreSQL** (et d’autres SGBD comme Oracle ou SQL Server), **une table partitionnée ne peut pas facilement être la cible d'une clé étrangère** venant d’une autre table.
+- Cela veut dire qu’**il est interdit d'établir une contrainte FOREIGN KEY** pointant directement vers une **table partitionnée**.
+- En revanche, **les partitions physiques** (individuelles) peuvent parfois être la cible, mais cela complique énormément la gestion.
+
+> **Pourquoi ?** Parce que la vérification d'intégrité référentielle sur une table partitionnée impliquerait de devoir scanner toutes les partitions, ce qui est inefficace.
+
+---
+
+### 📚 Exemple Clé Étrangère
+
+**Supposons** qu’on partitionne une table `clients` par région :
+
+```sql
+CREATE TABLE clients (
+    client_id INT NOT NULL,
+    region TEXT NOT NULL,
+    name TEXT
+) PARTITION BY LIST (region);
+```
+
+Et une autre table `commandes` souhaite référencer `clients` :
+
+```sql
+CREATE TABLE commandes (
+    order_id INT PRIMARY KEY,
+    client_id INT,
+    montant DECIMAL
+);
+```
+
+Tu voudrais normalement écrire :
+
+```sql
+ALTER TABLE commandes
+ADD CONSTRAINT fk_client
+FOREIGN KEY (client_id) REFERENCES clients(client_id);
+```
+
+❌ **Erreur** !  
+PostgreSQL (et d’autres SGBD) refusera et retournera une erreur du style :
+
+> _"Cannot add foreign key constraint referencing a partitioned table."_
+
+---
+
+### 🔸 Triggers
+
+- Sur les tables partitionnées, **les triggers au niveau "row-level"** (par ligne) sont **limités**.
+- Il faut **définir les triggers sur chaque partition physique** individuellement — **ils ne sont pas hérités automatiquement** (contrairement aux contraintes et aux index parfois).
+- Certains moteurs de base de données limitent aussi **l'utilisation de BEFORE INSERT/UPDATE triggers** sur la table parente partitionnée.
+
+---
+
+### 📚 Exemple Trigger
+
+Supposons qu’on veuille auditer toute insertion dans `clients` avec un trigger :
+
+```sql
+CREATE OR REPLACE FUNCTION log_client_insertion()
+RETURNS trigger AS $$
+BEGIN
+    INSERT INTO audit_clients_log(client_id, action_time)
+    VALUES (NEW.client_id, NOW());
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+Si on tente :
+
+```sql
+CREATE TRIGGER trg_log_insertion
+AFTER INSERT ON clients
+FOR EACH ROW
+EXECUTE FUNCTION log_client_insertion();
+```
+
+➡️ Le SGBD peut refuser ou **n'appliquer ce trigger qu'à la table parente**, **pas aux partitions**.  
+Résultat : **aucune insertion sur les partitions physiques ne déclenchera le trigger**. 😕
+
+👉 **Solution** : Il faut **répéter la création du trigger** **manuellement** sur chaque partition `clients_europe`, `clients_asia`, etc.
 
 ## 4.4 Sensibilité aux Modifications de Structure
 
