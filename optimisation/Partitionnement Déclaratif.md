@@ -2,6 +2,33 @@
 
 ---
 
+### ⚠️ Point d'attention : Le partitionnement n'est **pas** utile pour toutes les tables
+
+- Le partitionnement est **réservé aux très gros volumes de données**.
+- En dessous de **10 millions à 100 millions de lignes**, **on ne gagne souvent rien** en performance, et **on ajoute de la complexité inutile**.
+- **La majorité des bases** n'ont **pas besoin** de partitionner leurs tables : un bon indexage et des requêtes bien optimisées suffisent largement.
+- Il vaut mieux **retarder** la décision de partitionner jusqu'à ce que :
+  - Les requêtes deviennent vraiment lentes malgré de bons index.
+  - Le temps de maintenance (VACUUM, ANALYZE) devient problématique.
+  - La table devient difficile à manipuler en un bloc (backup, restore).
+
+---
+
+### ✅ Mini checklist : "Dois-je partitionner cette table ?"
+
+> Passe cette liste rapidement, si tu coches plusieurs réponses, le partitionnement devient pertinent.
+
+- [ ] Ma table dépasse **100 millions de lignes** ?
+- [ ] Je fais beaucoup de requêtes **sur des intervalles** (par exemple : par date, par région...) ?
+- [ ] Les opérations de **DELETE** ou **ARCHIVAGE** sur des vieux enregistrements sont fréquentes ?
+- [ ] Les temps de **VACUUM/ANALYZE** sont longs sur cette table ?
+- [ ] La taille de la table impacte les **performances globales** du serveur (I/O, RAM) ?
+- [ ] Mon modèle de données peut tolérer des **partitions sans FOREIGN KEY** directe ?
+
+**➔ Si tu réponds "oui" à 3 ou plus, commence à envisager un partitionnement.**
+
+---
+
 # 1. Introduction au Partitionnement Déclaratif
 
 Le partitionnement déclaratif est une fonctionnalité qui permet de diviser une table en plusieurs partitions physiques en fonction de règles spécifiques, telles que des intervalles, des valeurs discrètes ou des fonctions de hachage. Introduit dans des systèmes de gestion de bases de données relationnelles modernes, comme PostgreSQL, ce mécanisme simplifie la gestion des grandes tables et améliore les performances des requêtes et des opérations d'insertion.
