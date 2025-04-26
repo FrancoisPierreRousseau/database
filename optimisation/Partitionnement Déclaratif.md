@@ -2,6 +2,8 @@
 
 ---
 
+# 1. Introduction au Partitionnement Déclaratif
+
 ### ⚠️ Point d'attention : Le partitionnement n'est **pas** utile pour toutes les tables
 
 - Le partitionnement est **réservé aux très gros volumes de données**.
@@ -28,8 +30,6 @@
 **➔ Si tu réponds "oui" à 3 ou plus, commence à envisager un partitionnement.**
 
 ---
-
-# 1. Introduction au Partitionnement Déclaratif
 
 Le partitionnement déclaratif est une fonctionnalité qui permet de diviser une table en plusieurs partitions physiques en fonction de règles spécifiques, telles que des intervalles, des valeurs discrètes ou des fonctions de hachage. Introduit dans des systèmes de gestion de bases de données relationnelles modernes, comme PostgreSQL, ce mécanisme simplifie la gestion des grandes tables et améliore les performances des requêtes et des opérations d'insertion.
 
