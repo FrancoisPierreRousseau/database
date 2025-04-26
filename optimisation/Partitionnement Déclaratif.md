@@ -58,6 +58,7 @@ Cette approche garantit une gestion logique et une organisation efficace des don
 - **Optimisation des requêtes** : Les requêtes peuvent être optimisées grâce à l'élagage des partitions, c'est-à-dire la réduction du nombre de partitions explorées pendant l'exécution de la requête.
 - **Performances améliorées** pour les opérations d'insertion, qui sont équivalentes à celles d'une table standard.
 - **Maintenance facilitée** : Les opérations sur des partitions spécifiques, telles que l'archivage ou la suppression de données, sont plus simples à réaliser.
+
 ---
 
 ## 3.1 Accélération des Requêtes par Réduction de Données Scannées
@@ -113,10 +114,75 @@ Pour tirer pleinement parti de cette optimisation :
 
 # 4. Limitations du Partitionnement Déclaratif
 
-- **Contraintes d'unicité globale** non supportées : Chaque partition est indépendante, ce qui empêche l'application d'une contrainte d'unicité sur l'ensemble des partitions.
-- **Impossibilité de modifier la clé de partitionnement** : Une fois définie, la clé de partitionnement ne peut pas être modifiée sans recréer les partitions.
-- **Restrictions sur les clés étrangères et certains triggers** : Certaines configurations de clés étrangères ou de triggers peuvent ne pas fonctionner comme prévu avec des tables partitionnées.
-- **Sensibilité aux modifications de structure**, notamment dans le cas du partitionnement par hachage, où des changements peuvent affecter la répartition des données.
+Bien que le partitionnement déclaratif apporte de nombreux avantages, il comporte également plusieurs **limitations importantes** qu’il faut bien comprendre pour éviter les mauvaises surprises lors de la conception et de l’exploitation d'une base de données partitionnée.
+
+## 4.1 Contraintes d'Unicité Globale Non Supportées
+
+- **Problème** :  
+  Dans de nombreux SGBD (notamment PostgreSQL), il est **impossible d’imposer une contrainte d'unicité** sur l’ensemble de la table partitionnée sans inclure la clé de partition dans la contrainte.
+- **Conséquence** :  
+  Il n'est pas possible d'assurer, par exemple, qu'un `user_id` soit unique dans toute la table sans partitionnement explicite sur ce champ.
+- **Solutions de contournement** :
+  - Ajouter manuellement la colonne de partition dans les contraintes d'unicité.
+  - Créer des contraintes d'unicité locales par partition et garantir l'unicité au niveau applicatif.
+
+## 4.2 Impossibilité de Modifier la Clé de Partitionnement
+
+- **Problème** :  
+  Une fois une table partitionnée selon une clé donnée (`logdate`, `region`, etc.), il est **impossible de changer cette clé** sans recréer complètement la table et réinsérer les données.
+- **Conséquence** :  
+  Une mauvaise conception initiale impose des opérations lourdes et coûteuses en cas de changement ultérieur.
+- **Bonnes pratiques** :
+  - Bien anticiper la stratégie de partitionnement en fonction de la durée de vie du projet.
+  - Valider les scénarios d’évolution avant de choisir la clé de partitionnement.
+
+## 4.3 Restrictions sur les Clés Étrangères et les Triggers
+
+- **Problème** :  
+  Certaines fonctionnalités classiques comme les **clés étrangères** (`FOREIGN KEY`) et certains **triggers complexes** sont soit restreintes, soit interdites sur les tables partitionnées selon le SGBD :
+  - **PostgreSQL** : Les clés étrangères vers une table partitionnée ne sont pas supportées nativement.
+  - **Oracle** et **SQL Server** : Les clés étrangères sont supportées mais peuvent impliquer des coûts de performance élevés.
+- **Conséquence** :
+  - Les relations entre tables peuvent devenir difficiles à maintenir sans recourir à des validations manuelles.
+- **Solutions possibles** :
+  - Remplacer les contraintes physiques par des vérifications applicatives ou des triggers manuels contrôlés.
+  - Limiter les cas d’usage nécessitant des relations fortes entre grandes tables partitionnées.
+
+## 4.4 Sensibilité aux Modifications de Structure
+
+- **Problème** :  
+  Modifier la structure d’une table partitionnée (ajout de colonnes, changement d’index, changement de type) peut s’avérer beaucoup plus complexe que sur une table normale, car :
+  - Chaque partition physique peut devoir être modifiée séparément.
+  - Certains changements ne sont pas propagés automatiquement aux partitions existantes.
+- **Conséquence** :
+  - Maintenance et évolutivité réduites, nécessitant des scripts spécifiques de mise à jour sur toutes les partitions.
+- **Bonnes pratiques** :
+  - Déployer systématiquement des scripts de migration testés sur des environnements similaires.
+  - Minimiser les modifications structurelles après la mise en place du partitionnement.
+
+## 4.5 Complexité Accrue de l'Administration
+
+- **Problème** :  
+  Gérer des centaines voire des milliers de partitions rend l'administration quotidienne plus complexe :
+  - Surveillance plus fine des partitions individuelles.
+  - Maintenance (statistiques, index, archivage) plus lourde.
+  - Augmentation de la charge mentale pour les DBA et les équipes techniques.
+- **Conséquence** :
+  - Risque d'erreurs humaines en cas de maintenance manuelle.
+- **Solutions** :
+  - Automatiser toutes les tâches de maintenance récurrentes (rotation de partitions, purges, rebuild d'index...).
+  - Mettre en place des outils de monitoring spécifiques aux partitions.
+
+## 4.6 Limitations Propres aux SGBD
+
+Chaque système de gestion de bases de données a ses propres limites ou comportements particuliers :
+
+| Limitation                         | PostgreSQL                       | SQL Server                     | Oracle                         |
+| ---------------------------------- | -------------------------------- | ------------------------------ | ------------------------------ |
+| Partitionnement multi-niveaux      | Non (simulé via sous-partitions) | Oui (Partition + Subpartition) | Oui (Partition + Subpartition) |
+| Support des clés étrangères        | Non                              | Oui mais parfois coûteux       | Oui                            |
+| Création automatique de partitions | Non                              | Non                            | Oui (clause INTERVAL)          |
+| Maintenance automatique            | Limitée                          | Possible via jobs SQL Agent    | Possible via DBMS_SCHEDULER    |
 
 ---
 
