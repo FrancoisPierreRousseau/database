@@ -1,12 +1,10 @@
 ### Gestion des Vues et des Agrégats dans les Bases de Données : Un Guide pour Éviter les Erreurs Fréquentes
 
-Dans le développement d'applications, il est courant de manipuler des vues dans les bases de données pour des opérations de lecture. Cependant, une erreur fréquente consiste à mettre à jour directement ces vues sans prendre en compte les coûts et les impacts potentiels. Cette pratique peut entraîner des problèmes de performance et compromettre la maintenabilité des applications.
+Dans le développement d'applications, il est courant de manipuler des vues dans les bases de données pour des opérations de lecture.
 
-### Pourquoi Mettre à Jour des Vues ?
+### Mis à jour des Vues
 
-La mise à jour des vues peut sembler pratique car elle permet d'obtenir une cohérence transactionnelle. La cohérence transactionnelle est le fait d'assurer que toutes les modifications apportées à la base de données respectent les règles définies pour garantir l'intégrité des données. Elle regroupe naturellement les transactions communes, facilitant ainsi la maintenabilité des applications.
-
-Cependant, il est essentiel de se rappeler qu'une vue est principalement conçue pour des opérations de lecture. Lorsque l'on commence à utiliser les vues pour des opérations d'écriture, on peut rapidement rencontrer des problèmes de performance et de cohérence des données.
+Il est essentiel de se rappeler qu'une vue est principalement conçue pour des opérations de lecture. Lorsque l'on commence à utiliser les vues pour des opérations d'écriture, on peut rapidement rencontrer des problèmes de performance et de cohérence des données.
 
 #### Cas concrets de mise à jour des vues :
 
