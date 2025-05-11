@@ -33,6 +33,5 @@ Pour éviter les problèmes de performance et de cohérence des données, il est con
 * Identifier clairement les agrégats forts et faibles.
 * Toujours passer par l'agrégat principal pour les modifications dans le cadre d'un agrégat fort.
 * Permettre des transactions distinctes pour les agrégats faibles afin de maintenir une flexibilité et une maintenabilité accrue.
-* Utiliser des vues matérialisées pour les agrégats forts nécessitant des opérations complexes, tout en planifiant des mises à jour périodiques pour minimiser les coûts.
 
 En appliquant ces principes, il devient plus facile de structurer les opérations de lecture et d'écriture de manière efficace et de minimiser les risques d'incohérence des données.
