@@ -1,8 +1,19 @@
-**Partitionnement Déclaratif dans les Bases de Données Relationnelles**
+# Sommaire
+
+- [Introduction au Partitionnement Déclaratif](#introduction-au-partitionnement-déclaratif)
+- [Mécanisme de Fonctionnement](#mécanisme-de-fonctionnement)
+- [Avantages du Partitionnement Déclaratif](#avantages-du-partitionnement-déclaratif)
+- [Limitations du Partitionnement Déclaratif](#limitations-du-partitionnement-déclaratif)
+- [Comparaison des Solutions de Partitionnement dans Différents SGBD](#comparaison-des-solutions-de-partitionnement-dans-différents-sgbd)
+- [Maintenance des Partitions](#maintenance-des-partitions)
+- [Cas Pratiques d’Utilisation du Partitionnement Déclaratif](#cas-pratiques-dutilisation-du-partitionnement-déclaratif)
+- [Bonnes Pratiques pour le Partitionnement Déclaratif](#bonnes-pratiques-pour-le-partitionnement-déclaratif)
+- [Gestion des Très Grandes Volumétries de Partitions](#gestion-des-très-grandes-volumétries-de-partitions)
+
 
 ---
 
-# 1. Introduction au Partitionnement Déclaratif
+# Introduction au Partitionnement Déclaratif
 
 ### ⚠️ Point d'attention : Le partitionnement n'est **pas** utile pour toutes les tables
 
@@ -41,9 +52,9 @@ Le partitionnement déclaratif est une fonctionnalité qui permet de diviser une
 
 ---
 
-# 2. Mécanisme de Fonctionnement
+# Mécanisme de Fonctionnement
 
-## 2.1 Types de Partitionnement
+## Types de Partitionnement
 
 Le partitionnement peut se faire selon différentes stratégies, en fonction des besoins spécifiques du système ou des données :
 
@@ -51,7 +62,7 @@ Le partitionnement peut se faire selon différentes stratégies, en fonction des
 - **LIST** : Partitionnement par groupes de valeurs discrètes (par exemple, pays, catégories).
 - **HASH** : Partitionnement basé sur une fonction de hachage appliquée à une ou plusieurs colonnes.
 
-## 2.2 Exemples de Syntaxe de Partitionnement
+## Exemples de Syntaxe de Partitionnement
 
 Dans PostgreSQL, une table parente est définie sans données réelles, mais avec une stratégie de partitionnement. Par exemple, pour partitionner une table de mesures par date :
 
@@ -78,7 +89,7 @@ Cette approche garantit une gestion logique et une organisation efficace des don
 
 ---
 
-# 3. Avantages du Partitionnement Déclaratif
+# Avantages du Partitionnement Déclaratif
 
 - **Routage transparent** des nouvelles données vers la partition appropriée lors des opérations d'insertion.
 - **Héritage des contraintes** : Contrairement à ce qui est souvent supposé, dans certains systèmes comme PostgreSQL, les contraintes et triggers ne sont pas automatiquement hérités par les partitions. Les administrateurs doivent spécifiquement définir des contraintes et triggers sur chaque partition. Cela peut entraîner une gestion manuelle et un risque d'incohérences si ces éléments ne sont pas correctement appliqués à toutes les partitions.
@@ -88,7 +99,7 @@ Cette approche garantit une gestion logique et une organisation efficace des don
 
 ---
 
-## 3.1 Accélération des Requêtes par Réduction de Données Scannées
+## Accélération des Requêtes par Réduction de Données Scannées
 
 L’un des bénéfices majeurs du partitionnement déclaratif réside dans **l’amélioration significative des performances des requêtes** grâce à une technique appelée **élagage de partitions** (ou _partition pruning_). Ce mécanisme permet aux moteurs de bases de données comme **SQL Server** et **Oracle** de **scanner uniquement les partitions pertinentes**, plutôt que de parcourir toute la table, ce qui réduit drastiquement la quantité de données lues en mémoire et donc le temps d'exécution des requêtes.
 
@@ -139,11 +150,11 @@ Pour tirer pleinement parti de cette optimisation :
 
 ---
 
-# 4. Limitations du Partitionnement Déclaratif
+# Limitations du Partitionnement Déclaratif
 
 Bien que le partitionnement déclaratif apporte de nombreux avantages, il comporte également plusieurs **limitations importantes** qu’il faut bien comprendre pour éviter les mauvaises surprises lors de la conception et de l’exploitation d'une base de données partitionnée.
 
-## 4.1 Contraintes d'Unicité Globale Non Supportées
+## Contraintes d'Unicité Globale Non Supportées
 
 - **Problème** :  
   Dans de nombreux SGBD (notamment PostgreSQL), il est **impossible d’imposer une contrainte d'unicité** sur l’ensemble de la table partitionnée sans inclure la clé de partition dans la contrainte.
@@ -153,7 +164,7 @@ Bien que le partitionnement déclaratif apporte de nombreux avantages, il compor
   - Ajouter manuellement la colonne de partition dans les contraintes d'unicité.
   - Créer des contraintes d'unicité locales par partition et garantir l'unicité au niveau applicatif.
 
-## 4.2 Impossibilité de Modifier la Clé de Partitionnement
+## Impossibilité de Modifier la Clé de Partitionnement
 
 - **Problème** :  
   Une fois une table partitionnée selon une clé donnée (`logdate`, `region`, etc.), il est **impossible de changer cette clé** sans recréer complètement la table et réinsérer les données.
@@ -163,7 +174,7 @@ Bien que le partitionnement déclaratif apporte de nombreux avantages, il compor
   - Bien anticiper la stratégie de partitionnement en fonction de la durée de vie du projet.
   - Valider les scénarios d’évolution avant de choisir la clé de partitionnement.
 
-## 4.3 Restrictions sur les Clés Étrangères et les Triggers
+## Restrictions sur les Clés Étrangères et les Triggers
 
 Lorsqu'une table est **partitionnée**, certains comportements classiques des **clés étrangères** et des **triggers** deviennent limités ou plus complexes à mettre en œuvre :
 
@@ -251,7 +262,7 @@ Résultat : **aucune insertion sur les partitions physiques ne déclenchera le t
 
 👉 **Solution** : Il faut **répéter la création du trigger** **manuellement** sur chaque partition `clients_europe`, `clients_asia`, etc.
 
-## 4.4 Sensibilité aux Modifications de Structure
+## Sensibilité aux Modifications de Structure
 
 - **Problème** :  
   Modifier la structure d’une table partitionnée (ajout de colonnes, changement d’index, changement de type) peut s’avérer beaucoup plus complexe que sur une table normale, car :
@@ -263,7 +274,7 @@ Résultat : **aucune insertion sur les partitions physiques ne déclenchera le t
   - Déployer systématiquement des scripts de migration testés sur des environnements similaires.
   - Minimiser les modifications structurelles après la mise en place du partitionnement.
 
-## 4.5 Complexité Accrue de l'Administration
+## Complexité Accrue de l'Administration
 
 - **Problème** :  
   Gérer des centaines voire des milliers de partitions rend l'administration quotidienne plus complexe :
@@ -276,7 +287,7 @@ Résultat : **aucune insertion sur les partitions physiques ne déclenchera le t
   - Automatiser toutes les tâches de maintenance récurrentes (rotation de partitions, purges, rebuild d'index...).
   - Mettre en place des outils de monitoring spécifiques aux partitions.
 
-## 4.6 Limitations Propres aux SGBD
+## Limitations Propres aux SGBD
 
 Chaque système de gestion de bases de données a ses propres limites ou comportements particuliers :
 
@@ -289,7 +300,7 @@ Chaque système de gestion de bases de données a ses propres limites ou comport
 
 ---
 
-# 5. Comparaison des Solutions de Partitionnement dans Différents SGBD
+# Comparaison des Solutions de Partitionnement dans Différents SGBD
 
 | Caractéristique                    | PostgreSQL      | Oracle                | SQL Server        |
 | ---------------------------------- | --------------- | --------------------- | ----------------- |
@@ -333,7 +344,7 @@ CREATE TABLE event_schedule (
 
 ---
 
-# 6. Maintenance des Partitions
+# Maintenance des Partitions
 
 La gestion des partitions varie selon les systèmes, mais les actions fondamentales restent similaires.
 
@@ -346,11 +357,11 @@ La gestion des partitions varie selon les systèmes, mais les actions fondamenta
 
 ---
 
-# 7. Cas Pratiques d’Utilisation du Partitionnement Déclaratif
+# Cas Pratiques d’Utilisation du Partitionnement Déclaratif
 
 Le partitionnement déclaratif trouve de nombreuses applications concrètes dans les systèmes de bases de données relationnelles, en particulier lorsqu’il s'agit de manipuler de grandes quantités de données. Voici quelques scénarios typiques :
 
-## 7.1 Archivage de Données Historiques
+## Archivage de Données Historiques
 
 **Contexte** :  
 Dans des systèmes enregistrant de grandes volumétries de données historiques (logs, mesures IoT, transactions financières, etc.), les données anciennes deviennent rarement consultées.
@@ -365,7 +376,7 @@ Dans des systèmes enregistrant de grandes volumétries de données historiques 
 - Partitionner une table de journaux système par année.
 - Archiver puis supprimer facilement toutes les partitions de l'année 2020.
 
-## 7.2 Gestion de Catalogues Produits
+## Gestion de Catalogues Produits
 
 **Contexte** :  
 Dans un site e-commerce international, les produits peuvent être catégorisés par **région** ou **type de produit**.
@@ -379,7 +390,7 @@ Dans un site e-commerce international, les produits peuvent être catégorisés 
 
 - Une requête sur les produits `electronics` n'explore que la partition correspondante, accélérant les temps de réponse.
 
-## 7.3 Gestion de Données Multi-Tenants
+## Gestion de Données Multi-Tenants
 
 **Contexte** :  
 Applications SaaS (Software as a Service) hébergeant plusieurs clients (tenants) sur la même base.
@@ -393,7 +404,7 @@ Applications SaaS (Software as a Service) hébergeant plusieurs clients (tenants
 
 - Lorsqu'un client quitte le service, il suffit de détacher sa partition pour extraire toutes ses données.
 
-## 7.4 Accélération de l'Analyse Temporelle
+## Accélération de l'Analyse Temporelle
 
 **Contexte** :  
 Outils de Business Intelligence analysant des milliards de lignes de données temporelles.
@@ -407,7 +418,7 @@ Outils de Business Intelligence analysant des milliards de lignes de données te
 
 - Générer des rapports trimestriels sans balayer inutilement plusieurs années de données.
 
-## 7.5 Traitement de Données Volatiles
+## Traitement de Données Volatiles
 
 **Contexte** :  
 Systèmes enregistrant des données à fort volume mais faible durée de vie (ex: capteurs en temps réel, trading haute fréquence).
@@ -423,7 +434,7 @@ Systèmes enregistrant des données à fort volume mais faible durée de vie (ex
 
 ---
 
-# 8. Bonnes Pratiques pour le Partitionnement Déclaratif
+# Bonnes Pratiques pour le Partitionnement Déclaratif
 
 - **Prévoir la stratégie de partitionnement dès la conception** : Changer la clé de partitionnement plus tard est complexe.
 - **Limiter le nombre de partitions** : Trop de partitions dégrade les performances de gestion interne.
@@ -433,11 +444,11 @@ Systèmes enregistrant des données à fort volume mais faible durée de vie (ex
 
 ---
 
-# 9. Gestion des Très Grandes Volumétries de Partitions (SQL Server et Oracle)
+# Gestion des Très Grandes Volumétries de Partitions
 
 Dans SQL Server et Oracle, il est courant d’avoir besoin de **gérer plusieurs centaines voire milliers de partitions**, notamment pour des systèmes transactionnels volumineux, des entrepôts de données ou des plateformes IoT. Toutefois, **un nombre excessif de partitions** peut **négativement impacter les performances** internes et la maintenance.
 
-## 9.1 Pourquoi trop de partitions pose problème ?
+## Pourquoi trop de partitions pose problème ?
 
 - **Coût du planificateur de requêtes** : Chaque requête doit analyser la liste des partitions potentielles, augmentant le temps de compilation du plan d’exécution.
 - **Augmentation de la consommation mémoire** : Chaque partition implique des métadonnées supplémentaires à charger en RAM.
@@ -446,7 +457,7 @@ Dans SQL Server et Oracle, il est courant d’avoir besoin de **gérer plusieurs
 
 ---
 
-## 9.2 Stratégies pour contourner la limite
+## Stratégies pour contourner la limite
 
 ### 1. Partitionnement Composite (Multi-niveaux)
 
@@ -524,7 +535,7 @@ Cela permet aux moteurs d'interroger uniquement les partitions pertinentes sans 
 
 ---
 
-## 9.3 Bonnes pratiques spécifiques à SQL Server et Oracle
+## Bonnes pratiques spécifiques à SQL Server et Oracle
 
 | Bonnes Pratiques                      | SQL Server                                       | Oracle                                     |
 | ------------------------------------- | ------------------------------------------------ | ------------------------------------------ |
