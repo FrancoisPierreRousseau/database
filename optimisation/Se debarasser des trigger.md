@@ -1,4 +1,15 @@
-﻿### ✅ **1. Pourquoi les triggers complexes peuvent poser problème ?**
+﻿# Sommaire
+
+- [Gestion des Batchs : Avantages, Inconvénients et Gestion des Pannes](#gestion-des-batchs--avantages-inconvénients-et-gestion-des-pannes)
+  - [Point que je souhaite mettre en avant](#point-que-je-souhaite-mettre-en-avant)
+  - [1. Avantages des batchs](#1-avantages-des-batchs)
+  - [2. Inconvénients des batchs](#2-inconvénients-des-batchs)
+  - [3. Gestion des batchs toutes les 5 minutes](#3-gestion-des-batchs-toutes-les-5-minutes)
+  - [4. Exemple de batch toutes les 5 minutes](#4-exemple-de-batch-toutes-les-5-minutes)
+  - [5. Gestion des pannes dans les batchs](#5-gestion-des-pannes-dans-les-batchs)
+  - [6. Conclusion](#6-conclusion)
+
+### ✅ **1. Pourquoi les triggers complexes peuvent poser problème ?**
 
 Les triggers sont exécutés automatiquement à chaque **insertion, mise à jour ou suppression** de données dans une table. Cela peut devenir problématique lorsque :
 
@@ -253,22 +264,3 @@ Voir: https://github.com/FrancoisPierreRousseau/database/blob/main/Batch.md
 Cette approche progressive permet de **réduire le risque** lors de la refactorisation des triggers tout en bénéficiant d’un traitement batch plus optimisé et plus contrôlable.
 Cependant, elle doit être menée de manière structurée et documentée pour **éviter un éclatement de la logique métier** entre différents points d’entrée.
 L’objectif est de rester cohérent, de s’assurer que chaque modification est **intentionnelle, justifiée et traçable**.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
