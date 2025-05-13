@@ -18,6 +18,16 @@ Les triggers sont exécutés automatiquement à chaque **insertion, mise à jour
 
 ---
 
+### **2. Avantages
+
+L’un des **grands avantages** de cette méthode est qu’elle peut être **mise en place progressivement**.
+
+* On n’a pas besoin de réécrire tout le système d’un coup. On peut commencer par identifier les triggers les plus lourds ou les plus critiques, les externaliser dans des batchs, puis itérer.
+* Cependant, il est essentiel de **bien documenter chaque étape**, car cette approche **crée un découplage entre les opérations initiales (INSERT) et le traitement effectif (batchs)**.
+* Si ce découplage est mal structuré ou mal documenté, cela peut rapidement **devenir un cauchemar à maintenir**, car la logique métier est disséminée entre le trigger, les tables intermédiaires et les procédures batch.
+
+---
+
 ### ✅ **2. Quelle est la solution ?**
 
 **Déplacer la logique des triggers complexes vers des batchs planifiés.**
@@ -185,10 +195,56 @@ END;
 
 ---
 
+### ✅ **⚠️ Points d’attention :**
+
+* **Documentation cruciale :**
+
+  * Lorsqu’on migre une partie de la logique dans des batchs, il est essentiel de **documenter minutieusement** :
+
+    * Quelle logique est toujours gérée par les triggers.
+    * Quelle logique est désormais gérée par le batch.
+    * Les nouvelles dépendances créées (ex : table `stock_events`).
+
+* **Centraliser la logique métier :**
+
+  * Si le traitement est réparti entre plusieurs batchs, il faut s’assurer que la logique métier reste **cohérente et centralisée**.
+  * Un `INSERT` dans `Orders` ne devrait pas générer des mises à jour `Inventory` en triggers **et** en batchs — cela crée des doublons ou des incohérences.
+
+* **Gestion des erreurs :**
+
+  * Les erreurs dans le batch doivent être **documentées et traçables**.
+  * Par exemple, si un produit a une quantité négative après un batch, cela doit être signalé par une alerte ou un log.
+
+---
+
 ### ✅ **Conclusion :**
 
 * Les triggers complexes peuvent devenir des goulots d’étranglement, surtout sous forte concurrence ou avec des opérations lourdes.
 * En déplaçant la logique vers des batchs planifiés, on libère les transactions principales des traitements lourds, améliorant ainsi les performances globales.
 * On stocke simplement **l’événement ou l’état dans une table de logs**, puis on traite ces logs en différé.
 * Cette approche est particulièrement efficace pour des calculs d'agrégats, des notifications, des recalculs ou des processus d'intégration asynchrone.
+
+Cette approche progressive permet de **réduire le risque** lors de la refactorisation des triggers tout en bénéficiant d’un traitement batch plus optimisé et plus contrôlable.
+Cependant, elle doit être menée de manière structurée et documentée pour **éviter un éclatement de la logique métier** entre différents points d’entrée.
+L’objectif est de rester cohérent, de s’assurer que chaque modification est **intentionnelle, justifiée et traçable**.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
