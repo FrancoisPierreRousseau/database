@@ -185,24 +185,6 @@ END;
 
 Voir: https://github.com/FrancoisPierreRousseau/database/blob/main/Batch.md
 
-#### **Problèmes potentiels :**
-
-* **Données en attente de traitement :** Les événements stockés dans la table d’état peuvent ne pas être immédiatement répercutés sur les tables finales, ce qui peut provoquer des écarts temporaires.
-* **Conflits d’accès :** Si le batch traite un événement pendant qu’une transaction en cours effectue également des modifications, il peut y avoir des incohérences.
-* **Gestion des erreurs :** Si un batch échoue, les données traitées partiellement peuvent se retrouver dans un état indéterminé.
-
-#### **Scénarios de panne :**
-
-* **Panne de serveur :** En cas de panne de serveur pendant le traitement d'un batch, les transactions non complétées doivent être identifiées et rejouées dès le rétablissement du service.
-* **API externe non disponible :** Si le batch dépend d’une API externe et que celle-ci est inaccessible, des mécanismes de retry doivent être implémentés pour retenter l'opération après un délai.
-* **Timeout ou latence excessive :** Si le traitement d’un batch dépasse le délai imparti, un mécanisme de rollback doit être appliqué pour garantir la cohérence des données.
-
-#### **Solutions :**
-
-* **Transactions atomiques :** Assurer que le traitement des batchs se fasse en une seule transaction pour garantir la cohérence.
-* **Verrouillage sélectif :** Appliquer des verrous logiques ou physiques pour éviter les conflits lors du traitement des événements.
-* **Journalisation des opérations :** Enregistrer toutes les opérations dans un journal dédié pour tracer les événements traités ou en échec.
-
 ---
 
 ### ✅ **Pourquoi cette approche est-elle meilleure ?**
