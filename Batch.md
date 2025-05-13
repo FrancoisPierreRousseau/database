@@ -2,6 +2,10 @@
 
 Les batchs sont une solution puissante pour exécuter des traitements lourds de manière différée, mais leur fréquence peut impacter la performance et la cohérence des données.
 
+### Point que je souhaite mettre en avant
+
+Idempotence : Toutes les opérations doivent pouvoir être rejouées sans provoquer d'incohérence.
+
 ---
 
 ### ✅ **1. Avantages des batchs :**
