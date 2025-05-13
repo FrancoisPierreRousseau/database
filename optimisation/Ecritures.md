@@ -1,10 +1,20 @@
-﻿## Optimisation des Opérations CRUD : INSERT, UPDATE, DELETE
+﻿# Sommaire
+
+- [Optimisation des Opérations CRUD : INSERT, UPDATE, DELETE](#optimisation-des-opérations-crud--insert-update-delete)
+  - [Batch Inserts vs. Multi-Valued Inserts / INSERT ALL](#batch-inserts-vs-multi-valued-inserts--insert-all)
+  - [Quand choisir l'un ou l'autre ?](#quand-choisir-lun-ou-lautre)
+  - [Multi-Valued INSERT avec Insertion par Lot](#multi-valued-insert-avec-insertion-par-lot)
+  - [Gestion des Update/Delete Massifs](#gestion-des-updatedelete-massifs)
+  - [MERGE / UPSERT](#merge--upsert)
+  - [Triggers](#triggers)
+
+## Optimisation des Opérations CRUD : INSERT, UPDATE, DELETE
 
 Cette documentation vise à fournir des lignes directrices pour optimiser les opérations de création, mise à jour et suppression (INSERT, UPDATE, DELETE) dans les bases de données SQLServer et Oracle dans le cadre d'une application web à volumétrie moyenne à grande échelle.
 
-### ✅ **Batch Inserts vs. Multi-Valued Inserts / INSERT ALL**
+### Batch Inserts vs. Multi-Valued Inserts / INSERT ALL
 
-#### 1. **Batch Inserts :**
+#### 1. Batch Inserts
 
 * **Qu'est-ce que c'est ?**
 
@@ -25,7 +35,7 @@ Cette documentation vise à fournir des lignes directrices pour optimiser les op
 
 ---
 
-#### 2. **Multi-Valued INSERT (SQL Server) / INSERT ALL (Oracle) :**
+#### 2. Multi-Valued INSERT (SQL Server) / INSERT ALL (Oracle)
 
 * **Qu'est-ce que c'est ?**
 
@@ -62,7 +72,7 @@ Cette documentation vise à fournir des lignes directrices pour optimiser les op
 
 ---
 
-#### ✅ **Quand choisir l'un ou l'autre ?**
+### Quand choisir l'un ou l'autre ?
 
 | **Scénario**                                             | **Batch Inserts**                                           | **INSERT ALL / Multi-Valued INSERT**          |
 | -------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------- |
@@ -79,7 +89,7 @@ En résumé :
 * **En Oracle PL/SQL**, `FORALL` est un compromis idéal pour les batchs de données, combinant rapidité et gestion d'erreurs.
 
 
-### ✅ **Multi-Valued INSERT (SQL Server) / INSERT ALL (Oracle) avec Insertion par Lot**
+### Multi-Valued INSERT (SQL Server) / INSERT ALL (Oracle) avec Insertion par Lot
 
 ---
 
@@ -185,7 +195,7 @@ END;
 * Sur **SQL Server**, la combinaison de `TOP()`, des transactions et des commits contrôlés permet de gérer finement les ressources.
 
 
-### ✅ **Gestion des Update/Delete Massifs : Approche par Lot (Batch Processing) vs. Opération Unique**
+### Gestion des Update/Delete Massifs : Approche par Lot (Batch Processing) vs. Opération Unique
 
 ---
 
