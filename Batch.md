@@ -8,6 +8,31 @@ Idempotence : Toutes les opérations doivent pouvoir être rejouées sans provoq
 
 ---
 
+### ✅ **Privilégier les batchs dans un premier temps : Oui, souvent préférable**
+
+### Pourquoi choisir les batchs au début ?
+
+1. **Simplicité de mise en œuvre**
+
+   * Un batch est souvent plus simple à développer, déployer et monitorer qu’un système asynchrone complet basé sur des APIs et une file de messages (comme RabbitMQ).
+   * Pas besoin de gérer la complexité d’une file, des consommateurs, des retries, des messages en erreur, etc.
+
+2. **Robustesse et fiabilité**
+
+   * Un batch bien conçu (idempotent, journalisé, relançable) est très robuste face aux pannes.
+   * En cas d’erreur, il est facile de relancer le batch sans conséquences graves.
+
+3. **Moins de dépendances techniques**
+
+   * Pas besoin d’introduire tout de suite un middleware supplémentaire comme RabbitMQ.
+   * Moins de points de défaillance potentiels.
+
+4. **Adapté à la plupart des besoins “non temps réel”**
+
+   * Si le traitement n’a pas besoin d’être instantané (quelques minutes ou heures de latence acceptables), le batch est parfait.
+
+---
+
 ### ✅ **1. Avantages des batchs :**
 
 * **Réduction des verrous transactionnels :** Les traitements lourds sont exécutés en dehors des transactions critiques, réduisant le risque de deadlocks.
@@ -106,3 +131,5 @@ L'un des principaux avantages des batchs est leur simplicité de gestion en cas 
 Les batchs sont une solution robuste pour traiter des opérations lourdes ou non critiques à intervalles réguliers. Lorsqu'ils sont exécutés toutes les 5 minutes, il est essentiel de s'assurer que le traitement est optimisé pour éviter les chevauchements, minimiser la charge serveur et garantir la cohérence des données.
 
 La gestion des pannes est simplifiée : en cas d'échec, le batch est simplement relancé ou reprogrammé. Cela en fait une solution plus simple que l'asynchrone pur, tout en maintenant une certaine proximité avec le temps réel.
+
+
