@@ -9,7 +9,7 @@
   - [5. Gestion des pannes dans les batchs](#5-gestion-des-pannes-dans-les-batchs)
   - [6. Conclusion](#6-conclusion)
 
-### ✅ **Gestion des Batchs : Avantages, Inconvénients et Gestion des Pannes**
+### Gestion des Batchs : Avantages, Inconvénients et Gestion des Pannes
 
 Les batchs sont une solution puissante pour exécuter des traitements lourds de manière différée, mais leur fréquence peut impacter la performance et la cohérence des données.
 
@@ -19,7 +19,7 @@ Idempotence : Toutes les opérations doivent pouvoir être rejouées sans provoq
 
 ---
 
-### ✅ **1. Avantages des batchs :**
+### 1. Avantages des batchs
 
 * **Réduction des verrous transactionnels :** Les traitements lourds sont exécutés en dehors des transactions critiques, réduisant le risque de deadlocks.
 * **Scalabilité :** Les batchs peuvent être planifiés pour être exécutés à des moments de faible charge, optimisant ainsi les ressources serveur.
@@ -29,7 +29,7 @@ Idempotence : Toutes les opérations doivent pouvoir être rejouées sans provoq
 
 ---
 
-### ✅ **2. Inconvénients des batchs :**
+### 2. Inconvénients des batchs
 
 * **Latence :** Les batchs sont exécutés à des intervalles réguliers (ex : toutes les 5 minutes), ce qui peut entraîner des décalages de mise à jour des données.
 * **Charge serveur accrue :** Si le batch est lourd, une exécution fréquente peut saturer le serveur.
@@ -38,7 +38,7 @@ Idempotence : Toutes les opérations doivent pouvoir être rejouées sans provoq
 
 ---
 
-### ✅ **3. Gestion des batchs toutes les 5 minutes :**
+### 3. Gestion des batchs toutes les 5 minutes
 
 * **Vérification de l'achèvement du batch précédent :** Avant de lancer un nouveau batch, vérifier si le précédent est terminé avec succès pour éviter les chevauchements.
 * **Limitation du traitement :** Ne traiter que les données modifiées depuis le dernier batch, basées sur un champ `updated_at`.
@@ -47,7 +47,7 @@ Idempotence : Toutes les opérations doivent pouvoir être rejouées sans provoq
 
 ---
 
-### ✅ **4. Exemple de batch toutes les 5 minutes :**
+### 4. Exemple de batch toutes les 5 minutes
 
 **Table de log :**
 
@@ -96,7 +96,7 @@ END CATCH;
 
 ---
 
-### ✅ **5. Gestion des pannes dans les batchs :**
+### 5. Gestion des pannes dans les batchs
 
 L'un des principaux avantages des batchs est leur simplicité de gestion en cas de panne. Contrairement aux opérations asynchrones ou temps réel qui nécessitent des mécanismes complexes de reprise ou de compensation, les batchs sont conçus pour fonctionner uniquement lorsque la base de données est accessible.
 
@@ -112,7 +112,7 @@ L'un des principaux avantages des batchs est leur simplicité de gestion en cas 
 * **Retry automatique :** Les batchs peuvent être configurés pour être relancés automatiquement en cas d'échec.
 * **Journalisation :** Tous les batchs échoués doivent être enregistrés dans une table de log pour permettre un suivi des erreurs et une reprise ciblée.
 
-### ✅ **6. Conclusion :**
+### 6. Conclusion
 
 Les batchs sont une solution robuste pour traiter des opérations lourdes ou non critiques à intervalles réguliers. Lorsqu'ils sont exécutés toutes les 5 minutes, il est essentiel de s'assurer que le traitement est optimisé pour éviter les chevauchements, minimiser la charge serveur et garantir la cohérence des données.
 
