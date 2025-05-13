@@ -9,7 +9,6 @@
   - [5. Gestion des pannes dans les batchs](#5-gestion-des-pannes-dans-les-batchs)
   - [6. Conclusion](#6-conclusion)
 
-
 ### ✅ **Gestion des Batchs : Avantages, Inconvénients et Gestion des Pannes**
 
 Les batchs sont une solution puissante pour exécuter des traitements lourds de manière différée, mais leur fréquence peut impacter la performance et la cohérence des données.
