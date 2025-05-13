@@ -18,16 +18,6 @@ Les triggers sont exécutés automatiquement à chaque **insertion, mise à jour
 
 ---
 
-### **2. Avantages
-
-L’un des **grands avantages** de cette méthode est qu’elle peut être **mise en place progressivement**.
-
-* On n’a pas besoin de réécrire tout le système d’un coup. On peut commencer par identifier les triggers les plus lourds ou les plus critiques, les externaliser dans des batchs, puis itérer.
-* Cependant, il est essentiel de **bien documenter chaque étape**, car cette approche **crée un découplage entre les opérations initiales (INSERT) et le traitement effectif (batchs)**.
-* Si ce découplage est mal structuré ou mal documenté, cela peut rapidement **devenir un cauchemar à maintenir**, car la logique métier est disséminée entre le trigger, les tables intermédiaires et les procédures batch.
-
----
-
 ### ✅ **2. Quelle est la solution ?**
 
 **Déplacer la logique des triggers complexes vers des batchs planifiés.**
@@ -38,6 +28,14 @@ L’idée est de **découpler la logique métier complexe des transactions princ
 
 * **Au lieu de faire toutes les opérations immédiatement dans le trigger, on va stocker des informations dans une table d’état ou de log.**
 * Ensuite, un batch planifié (ex : une procédure stockée ou un job SQL Server Agent) **va traiter ces états** de manière asynchrone, selon une fréquence déterminée (toutes les 5 minutes, toutes les heures, etc.).
+
+#### Avantages / Desavantages
+
+L’un des **grands avantages** de cette méthode est qu’elle peut être **mise en place progressivement**.
+
+* On n’a pas besoin de réécrire tout le système d’un coup. On peut commencer par identifier les triggers les plus lourds ou les plus critiques, les externaliser dans des batchs, puis itérer.
+* Cependant, il est essentiel de **bien documenter chaque étape**, car cette approche **crée un découplage entre les opérations initiales (INSERT) et le traitement effectif (batchs)**.
+* Si ce découplage est mal structuré ou mal documenté, cela peut rapidement **devenir un cauchemar à maintenir**, car la logique métier est disséminée entre le trigger, les tables intermédiaires et les procédures batch.
 
 ---
 
