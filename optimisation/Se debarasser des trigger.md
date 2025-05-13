@@ -8,7 +8,7 @@
 - [Points d’attention](#points-dattention)
 - [Conclusion](#conclusion)
 
-### 1. Pourquoi les triggers complexes peuvent poser problème ?
+### Pourquoi les triggers complexes peuvent poser problème?
 
 Les triggers sont exécutés automatiquement à chaque **insertion, mise à jour ou suppression** de données dans une table. Cela peut devenir problématique lorsque :
 
@@ -28,7 +28,7 @@ Les triggers sont exécutés automatiquement à chaque **insertion, mise à jour
 
 ---
 
-### 2. Quelle est la solution ?
+### Quelle est la solution?
 
 **Déplacer la logique des triggers complexes vers des batchs planifiés.**
 
@@ -49,7 +49,7 @@ L’un des **grands avantages** de cette méthode est qu’elle peut être **mis
 
 ---
 
-### 3. Mise en œuvre : Gestion des Stocks dans un E-commerce
+### Mise en œuvre - Gestion des Stocks dans un E-commerce
 
 ---
 
@@ -191,7 +191,7 @@ END;
 
 ---
 
-### 4. Cohérence des données : Privilégier les batchs dans un premier temps
+### Cohérence des données - Privilégier les batchs dans un premier temps
 
 #### Pourquoi choisir les batchs au début ?
 
@@ -219,7 +219,7 @@ Voir: https://github.com/FrancoisPierreRousseau/database/blob/main/Batch.md
 
 ---
 
-### 5. Pourquoi cette approche est-elle meilleure ?
+### Pourquoi cette approche est-elle meilleure?
 
 | **Aspect**            | **Trigger Direct**                                               | **Batch Planifié**                                 |
 | --------------------- | ---------------------------------------------------------------- | -------------------------------------------------- |
@@ -231,7 +231,7 @@ Voir: https://github.com/FrancoisPierreRousseau/database/blob/main/Batch.md
 
 ---
 
-### 6. Points d’attention
+### Points d’attention
 
 * **Documentation cruciale :**
 
@@ -253,7 +253,7 @@ Voir: https://github.com/FrancoisPierreRousseau/database/blob/main/Batch.md
 
 ---
 
-### 7. Conclusion
+### Conclusion
 
 * Les triggers complexes peuvent devenir des goulots d’étranglement, surtout sous forte concurrence ou avec des opérations lourdes.
 * En déplaçant la logique vers des batchs planifiés, on libère les transactions principales des traitements lourds, améliorant ainsi les performances globales.
