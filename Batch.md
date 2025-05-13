@@ -1,4 +1,16 @@
-﻿### ✅ **Gestion des Batchs : Avantages, Inconvénients et Gestion des Pannes**
+﻿# Sommaire
+
+- [Gestion des Batchs : Avantages, Inconvénients et Gestion des Pannes](#gestion-des-batchs--avantages-inconvénients-et-gestion-des-pannes)
+  - [Point que je souhaite mettre en avant](#point-que-je-souhaite-mettre-en-avant)
+  - [1. Avantages des batchs](#1-avantages-des-batchs)
+  - [2. Inconvénients des batchs](#2-inconvénients-des-batchs)
+  - [3. Gestion des batchs toutes les 5 minutes](#3-gestion-des-batchs-toutes-les-5-minutes)
+  - [4. Exemple de batch toutes les 5 minutes](#4-exemple-de-batch-toutes-les-5-minutes)
+  - [5. Gestion des pannes dans les batchs](#5-gestion-des-pannes-dans-les-batchs)
+  - [6. Conclusion](#6-conclusion)
+
+
+### ✅ **Gestion des Batchs : Avantages, Inconvénients et Gestion des Pannes**
 
 Les batchs sont une solution puissante pour exécuter des traitements lourds de manière différée, mais leur fréquence peut impacter la performance et la cohérence des données.
 
