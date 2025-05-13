@@ -183,7 +183,7 @@ END;
 
 ### ✅ **4. Cohérence des données :**
 
-La cohérence des données est un aspect crucial à considérer lors du déplacement de la logique des triggers vers des batchs planifiés. Lorsqu’on passe d’une exécution immédiate à une exécution différée, il existe un risque accru de désynchronisation des données si des transactions concurrentes affectent les mêmes tables ou lignes de données.
+Voir: https://github.com/FrancoisPierreRousseau/database/blob/main/Batch.md
 
 #### **Problèmes potentiels :**
 
