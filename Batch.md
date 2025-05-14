@@ -1,54 +1,61 @@
-﻿# Sommaire
+﻿
 
-- [Gestion des Batchs : Avantages, Inconvénients et Gestion des Pannes](#gestion-des-batchs--avantages-inconvénients-et-gestion-des-pannes)
-  - [Point que je souhaite mettre en avant](#point-que-je-souhaite-mettre-en-avant)
-  - [1. Avantages des batchs](#1-avantages-des-batchs)
-  - [2. Inconvénients des batchs](#2-inconvénients-des-batchs)
-  - [3. Gestion des batchs toutes les 5 minutes](#3-gestion-des-batchs-toutes-les-5-minutes)
-  - [4. Exemple de batch toutes les 5 minutes](#4-exemple-de-batch-toutes-les-5-minutes)
-  - [5. Gestion des pannes dans les batchs](#5-gestion-des-pannes-dans-les-batchs)
-  - [6. Déclenchement des Batchs via des Événements dans Oracle et SQL Server](#6-déclenchement-des-batchs-via-des-événements-dans-oracle-et-sql-server)
-  - [7. Conclusion](#6-conclusion)
 
-### Gestion des Batchs : Avantages, Inconvénients et Gestion des Pannes
+## Sommaire
 
-Les batchs sont une solution puissante pour exécuter des traitements lourds de manière différée, mais leur fréquence peut impacter la performance et la cohérence des données.
+* [Introduction aux Batchs](#introduction-aux-batchs)
 
-### Point que je souhaite mettre en avant
+* [Batchs Temporels](#batchs-temporels)
 
-Idempotence : Toutes les opérations doivent pouvoir être rejouées sans provoquer d'incohérence.
+  * [Avantages des Batchs Temporels](#avantages-des-batchs-temporels)
+  * [Inconvénients des Batchs Temporels](#inconvénients-des-batchs-temporels)
+  * [Gestion des Batchs Temporels](#gestion-des-batchs-temporels)
+  * [Exemple de Batch Temporel](#exemple-de-batch-temporel)
 
----
+* [Batchs Événementiels](#batchs-événementiels)
 
-### 1. Avantages des batchs
+  * [Avantages des Batchs Événementiels](#avantages-des-batchs-événementiels)
+  * [Inconvénients des Batchs Événementiels](#inconvénients-des-batchs-événementiels)
+  * [Gestion des Batchs Événementiels](#gestion-des-batchs-événementiels)
+  * [Exemple de Batch Événementiel](#exemple-de-batch-événementiel)
 
-* **Réduction des verrous transactionnels :** Les traitements lourds sont exécutés en dehors des transactions critiques, réduisant le risque de deadlocks.
-* **Scalabilité :** Les batchs peuvent être planifiés pour être exécutés à des moments de faible charge, optimisant ainsi les ressources serveur.
-* **Centralisation des traitements :** La logique métier est centralisée dans des batchs, ce qui facilite la maintenance et le débogage.
-* **Contrôle des erreurs :** Les batchs permettent de gérer les erreurs de manière structurée, avec des mécanismes de retry et de compensation.
-* **Simplicité de gestion en cas de panne :** Si le serveur ou la base de données est indisponible, le batch peut simplement être replanifié ou relancé sans gestion complexe d'événements.
+* [Comparaison des Batchs Temporels et Événementiels](#comparaison-des-batchs-temporels-et-événementiels)
+
+* [Gestion des Pannes](#gestion-des-pannes)
+
+* [Conclusion](#conclusion)
 
 ---
 
-### 2. Inconvénients des batchs
+## Introduction aux Batchs
 
-* **Latence :** Les batchs sont exécutés à des intervalles réguliers (ex : toutes les 5 minutes), ce qui peut entraîner des décalages de mise à jour des données.
-* **Charge serveur accrue :** Si le batch est lourd, une exécution fréquente peut saturer le serveur.
-* **Risque de chevauchement :** Si un batch prend plus de temps à s'exécuter que l'intervalle prévu, le batch suivant pourrait démarrer alors que le précédent n'est pas terminé, créant des conflits ou des incohérences.
-* **Gestion des conflits :** Si les données sont modifiées pendant le recalcul, il peut y avoir des écarts temporaires entre l'état réel et les données calculées.
+Les batchs sont des traitements automatisés exécutés soit à des intervalles de temps réguliers (batchs temporels), soit en réponse à des événements spécifiques (batchs événementiels). Ils permettent de traiter des volumes importants de données tout en minimisant l'impact sur le système.
 
----
+## Batchs Temporels
 
-### 3. Gestion des batchs toutes les 5 minutes
+Les batchs temporels s'exécutent à des intervalles réguliers, par exemple toutes les 5 minutes. Ils sont utiles pour des traitements récurrents et prévisibles.
 
-* **Vérification de l'achèvement du batch précédent :** Avant de lancer un nouveau batch, vérifier si le précédent est terminé avec succès pour éviter les chevauchements.
-* **Limitation du traitement :** Ne traiter que les données modifiées depuis le dernier batch, basées sur un champ `updated_at`.
-* **Timeout et retry :** Si le batch ne termine pas en 4 minutes, il est stoppé et réessayé plus tard pour éviter l'accumulation des batchs en échec.
-* **Journalisation des opérations :** Utiliser une table de log pour suivre l'état de chaque batch (`en cours`, `terminé`, `échoué`).
+### Avantages des Batchs Temporels
 
----
+* Réduction des verrous transactionnels.
+* Scalabilité.
+* Centralisation des traitements.
+* Gestion simplifiée des erreurs.
 
-### 4. Exemple de batch toutes les 5 minutes
+### Inconvénients des Batchs Temporels
+
+* Latence accrue.
+* Charge serveur accrue.
+* Risque de chevauchement des batchs.
+* Gestion complexe des conflits de données.
+
+### Gestion des Batchs Temporels
+
+* Vérifier l'achèvement des batchs précédents avant de lancer un nouveau batch.
+* Limiter le traitement aux données modifiées (basé sur un champ `updated_at`).
+* Implémenter des mécanismes de timeout et de retry.
+
+### Exemple de Batch Temporel
 
 **Table de log :**
 
@@ -97,24 +104,28 @@ END CATCH;
 
 ---
 
-### 5. Gestion des pannes dans les batchs
+## Batchs Événementiels
 
-L'un des principaux avantages des batchs est leur simplicité de gestion en cas de panne. Contrairement aux opérations asynchrones ou temps réel qui nécessitent des mécanismes complexes de reprise ou de compensation, les batchs sont conçus pour fonctionner uniquement lorsque la base de données est accessible.
+Les batchs événementiels sont déclenchés par des événements tels qu'une mise à jour de données ou une insertion dans une table.
 
-#### **Pourquoi ?**
+### Avantages des Batchs Événementiels
 
-* Les batchs ne répondent pas en temps réel. Si la base de données ou le serveur est indisponible, le batch échoue simplement et peut être reprogrammé ou réessayé lors du prochain cycle.
-* Le traitement est global : un batch ne traite pas des opérations individuelles mais une série d'opérations. Ainsi, s'il échoue, il est relancé intégralement, garantissant la cohérence des données.
-* Aucune gestion de file d'attente n'est nécessaire : contrairement aux opérations asynchrones qui doivent stocker les événements en attente, le batch peut tout simplement réessayer les opérations manquées.
+* Réactivité accrue.
+* Optimisation des ressources.
+* Réduction de la latence.
 
-#### **Gestion des erreurs :**
+### Inconvénients des Batchs Événementiels
 
-* **Timeouts :** Si le batch ne termine pas dans le délai imparti, il est marqué comme échoué et peut être réessayé.
-* **Retry automatique :** Les batchs peuvent être configurés pour être relancés automatiquement en cas d'échec.
-* **Journalisation :** Tous les batchs échoués doivent être enregistrés dans une table de log pour permettre un suivi des erreurs et une reprise ciblée.
+* Complexité accrue.
+* Risque de surcharge en cas d'événements fréquents.
 
+### Gestion des Batchs Événementiels
 
-### 6. Déclenchement des Batchs via des Événements dans Oracle et SQL Server
+* Implémenter des triggers ou des jobs planifiés.
+* Créer des files d'attente pour gérer les événements.
+* Définir des règles de gestion des erreurs et des retries.
+
+### Exemple de Batch Événementiel
 
 Dans Oracle et SQL Server, il est possible de déclencher des batchs en réponse à des événements spécifiques, offrant une flexibilité accrue dans la gestion des traitements.
 
@@ -248,33 +259,20 @@ END;
 Ces approches permettent de combiner le traitement par batch avec des événements en temps réel, garantissant ainsi une exécution plus réactive tout en préservant la logique de traitement différé.
 
 
-### 7. Conclusion
+## Comparaison des Batchs Temporels et Événementiels
 
-Les batchs sont une solution robuste pour traiter des opérations lourdes ou non critiques à intervalles réguliers. Lorsqu'ils sont exécutés toutes les 5 minutes, il est essentiel de s'assurer que le traitement est optimisé pour éviter les chevauchements, minimiser la charge serveur et garantir la cohérence des données.
+* Temporels : Exécution régulière, prévisible mais peut générer de la latence.
+* Événementiels : Réactifs, optimisés mais plus complexes à gérer.
 
-La gestion des pannes est simplifiée : en cas d'échec, le batch est simplement relancé ou reprogrammé. Cela en fait une solution plus simple que l'asynchrone pur, tout en maintenant une certaine proximité avec le temps réel.
+## Gestion des Pannes
 
+* Timeout et retry pour les deux types de batchs.
+* Journalisation des opérations pour assurer le suivi des erreurs.
+* Redémarrage des batchs échoués sans compromettre la cohérence des données.
 
+## Conclusion
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Les batchs, qu'ils soient temporels ou événementiels, sont des outils puissants pour automatiser les traitements en backend. Les batchs temporels sont simples à mettre en œuvre mais peuvent générer de la latence, tandis que les batchs événementiels sont plus réactifs mais plus complexes à gérer. La clé est de choisir le type de batch en fonction des besoins spécifiques du traitement et des contraintes du système.
 
 
 
