@@ -7,7 +7,8 @@
   - [3. Gestion des batchs toutes les 5 minutes](#3-gestion-des-batchs-toutes-les-5-minutes)
   - [4. Exemple de batch toutes les 5 minutes](#4-exemple-de-batch-toutes-les-5-minutes)
   - [5. Gestion des pannes dans les batchs](#5-gestion-des-pannes-dans-les-batchs)
-  - [6. Conclusion](#6-conclusion)
+  - [6. Déclenchement des Batchs via des Événements dans Oracle et SQL Server](#6. Déclenchement des Batchs via des Événements dans Oracle et SQL Server)
+  - [7. Conclusion](#6-conclusion)
 
 ### Gestion des Batchs : Avantages, Inconvénients et Gestion des Pannes
 
@@ -112,10 +113,174 @@ L'un des principaux avantages des batchs est leur simplicité de gestion en cas 
 * **Retry automatique :** Les batchs peuvent être configurés pour être relancés automatiquement en cas d'échec.
 * **Journalisation :** Tous les batchs échoués doivent être enregistrés dans une table de log pour permettre un suivi des erreurs et une reprise ciblée.
 
-### 6. Conclusion
+
+### 6. Déclenchement des Batchs via des Événements dans Oracle et SQL Server
+
+Dans Oracle et SQL Server, il est possible de déclencher des batchs en réponse à des événements spécifiques, offrant une flexibilité accrue dans la gestion des traitements.
+
+**Oracle :**
+Dans Oracle, les batchs peuvent être déclenchés à l'aide de triggers, de jobs planifiés via Oracle Scheduler ou encore via Oracle AQ (Advanced Queuing).
+
+1. **Déclenchement par Oracle Scheduler :**
+   Un job peut être configuré pour s'exécuter lorsqu'une table est modifiée ou lorsqu'un événement spécifique est enregistré.
+
+Exemple :
+
+```sql
+BEGIN
+   DBMS_SCHEDULER.create_job(
+      job_name        => 'batch_triggered_job',
+      job_type        => 'PLSQL_BLOCK',
+      job_action      => 'BEGIN batch_procedure(); END;',
+      event_condition => 'table_update_event',
+      auto_drop       => TRUE
+   );
+END;
+/
+```
+
+2. **Déclenchement par Oracle AQ (Advanced Queuing) :**
+   Oracle AQ permet de mettre en place une file d'attente de messages et de déclencher des jobs en fonction des messages reçus. Cela permet d'implémenter une architecture orientée événements pour le traitement des batchs.
+
+Exemple :
+
+```sql
+-- Créer une file d'attente
+BEGIN
+   DBMS_AQADM.create_queue_table(
+      queue_table => 'batch_queue_table',
+      queue_payload_type => 'RAW'
+   );
+
+   DBMS_AQADM.create_queue(
+      queue_name => 'batch_queue',
+      queue_table => 'batch_queue_table'
+   );
+
+   DBMS_AQADM.start_queue(
+      queue_name => 'batch_queue'
+   );
+END;
+/
+
+-- Créer un job pour traiter les messages de la file d'attente
+BEGIN
+   DBMS_SCHEDULER.create_job(
+      job_name   => 'batch_queue_job',
+      job_type   => 'PLSQL_BLOCK',
+      job_action => 'BEGIN batch_procedure(); END;',
+      queue_spec => 'batch_queue',
+      auto_drop  => TRUE
+   );
+END;
+/
+
+-- Insérer un message dans la file d'attente
+DECLARE
+   message RAW(2000);
+BEGIN
+   message := UTL_RAW.cast_to_raw('Trigger Batch');
+   DBMS_AQ.enqueue(
+      queue_name => 'batch_queue',
+      enqueue_options => DBMS_AQ.ENQUEUE_OPTIONS_T(),
+      message_properties => DBMS_AQ.MESSAGE_PROPERTIES_T(),
+      payload => message,
+      msgid => message
+   );
+END;
+/
+```
+
+Cette approche permet de découpler le déclenchement des batchs des événements eux-mêmes, offrant ainsi une architecture plus modulaire et plus facile à maintenir.
+
+**SQL Server :**
+Dans SQL Server, des batchs peuvent être déclenchés via des SQL Server Agent Jobs ou par l'utilisation de Service Broker pour réagir à des événements spécifiques, tels qu'une insertion, une mise à jour ou une suppression dans une table.
+
+Exemple :
+
+```sql
+CREATE TRIGGER TriggerBatchExecution
+ON dbo.Orders
+AFTER INSERT, UPDATE
+AS
+BEGIN
+   EXEC msdb.dbo.sp_start_job N'BatchJobName';
+END;
+```
+
+Ces approches permettent de combiner le traitement par batch avec des événements en temps réel, garantissant ainsi une exécution plus réactive tout en préservant la logique de traitement différé.
+
+Dans Oracle et SQL Server, il est possible de déclencher des batchs en réponse à des événements spécifiques, offrant une flexibilité accrue dans la gestion des traitements.
+
+**Oracle :**
+Dans Oracle, les batchs peuvent être déclenchés à l'aide de triggers ou de jobs planifiés via Oracle Scheduler. Par exemple, un job peut être configuré pour s'exécuter lorsqu'une table est modifiée ou lorsqu'un événement spécifique est enregistré.
+
+Exemple :
+
+```sql
+BEGIN
+   DBMS_SCHEDULER.create_job(
+      job_name        => 'batch_triggered_job',
+      job_type        => 'PLSQL_BLOCK',
+      job_action      => 'BEGIN batch_procedure(); END;',
+      event_condition => 'table_update_event',
+      auto_drop       => TRUE
+   );
+END;
+/
+```
+
+**SQL Server :**
+Dans SQL Server, des batchs peuvent être déclenchés via des SQL Server Agent Jobs ou par l'utilisation de Service Broker pour réagir à des événements spécifiques, tels qu'une insertion, une mise à jour ou une suppression dans une table.
+
+Exemple :
+
+```sql
+CREATE TRIGGER TriggerBatchExecution
+ON dbo.Orders
+AFTER INSERT, UPDATE
+AS
+BEGIN
+   EXEC msdb.dbo.sp_start_job N'BatchJobName';
+END;
+```
+
+Ces approches permettent de combiner le traitement par batch avec des événements en temps réel, garantissant ainsi une exécution plus réactive tout en préservant la logique de traitement différé.
+
+
+### 7. Conclusion
 
 Les batchs sont une solution robuste pour traiter des opérations lourdes ou non critiques à intervalles réguliers. Lorsqu'ils sont exécutés toutes les 5 minutes, il est essentiel de s'assurer que le traitement est optimisé pour éviter les chevauchements, minimiser la charge serveur et garantir la cohérence des données.
 
 La gestion des pannes est simplifiée : en cas d'échec, le batch est simplement relancé ou reprogrammé. Cela en fait une solution plus simple que l'asynchrone pur, tout en maintenant une certaine proximité avec le temps réel.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
