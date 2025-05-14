@@ -20,9 +20,8 @@
   * [Exemple de Batch Événementiel](#exemple-de-batch-événementiel)
 
 * [Comparaison des Batchs Temporels et Événementiels](#comparaison-des-batchs-temporels-et-événementiels)
-
 * [Gestion des Pannes](#gestion-des-pannes)
-
+* [Stratégie Recommandée : Stockage Intermédiaire des Modifications](#strategie-recommandee-stockage-intermediaire-des-modifications)
 * [Conclusion](#conclusion)
 
 ---
@@ -270,15 +269,99 @@ Ces approches permettent de combiner le traitement par batch avec des événemen
 * Journalisation des opérations pour assurer le suivi des erreurs.
 * Redémarrage des batchs échoués sans compromettre la cohérence des données.
 
+## Stratégie Recommandée : Stockage Intermédiaire des Modifications
+
+L'application des nouvelles modifications doit suivre une stratégie qui vise à minimiser les risques d'incohérence des données et à garantir l'intégrité des traitements batchs.
+
+### Objectif :
+
+* Éviter toute modification directe des tables sources.
+* Conserver les nouvelles valeurs dans une structure temporaire ou une table de staging.
+* Appliquer ces modifications de manière transactionnelle une fois que le batch a été entièrement validé.
+
+### Pourquoi cette stratégie ?
+
+* **Réversibilité :** Si le batch échoue, les modifications ne sont pas appliquées aux tables sources. Cela permet un retour arrière rapide sans affecter les données en production.
+* **Atomicité :** Les modifications ne sont appliquées qu'une fois l'ensemble du batch validé. En cas d'échec, aucune donnée partielle ou incomplète n'est insérée.
+* **Gestion des conflits :** Les conflits de données peuvent être identifiés et résolus dans la table de staging avant d'être appliqués aux tables sources.
+* **Performance :** Réduire le nombre d'opérations de lecture/écriture sur les tables sources permet de limiter les verrous transactionnels.
+
+### Implémentation Technique :
+
+* Créer une **table de staging** pour stocker les modifications.
+* Mettre en place un **batch de traitement** qui :
+
+  * Récupère les données modifiées.
+  * Les insère ou met à jour dans la table de staging.
+  * Effectue les contrôles nécessaires (validation des données, gestion des conflits).
+  * Applique les modifications aux tables sources **uniquement si le batch est terminé avec succès**.
+  * Archive ou supprime les données de la table de staging une fois le traitement terminé.
+
+### Exemple d'Implémentation :
+
+#### Table de Staging :
+
+```sql
+CREATE TABLE staging_inventory (
+    item_id INT PRIMARY KEY,
+    new_stock_quantity INT,
+    modified_at DATETIME,
+    batch_id INT
+);
+```
+
+#### Batch de Traitement :
+
+```sql
+DECLARE @batch_id INT = (SELECT ISNULL(MAX(batch_id), 0) + 1 FROM batch_log);
+
+-- Insérer les modifications dans la table de staging
+INSERT INTO staging_inventory (item_id, new_stock_quantity, modified_at, batch_id)
+SELECT item_id, stock_quantity - o.quantity, GETDATE(), @batch_id
+FROM orders o
+WHERE o.updated_at >= (SELECT MAX(end_time) FROM batch_log WHERE batch_type = 'recalcul_stock' AND status = 'terminé');
+
+-- Validation des données
+IF EXISTS (
+    SELECT 1
+    FROM staging_inventory
+    WHERE new_stock_quantity < 0
+)
+BEGIN
+    PRINT 'Erreur : Quantité de stock négative détectée. Batch annulé.';
+    RETURN;
+END
+
+-- Appliquer les modifications aux tables sources
+BEGIN TRY
+    UPDATE inventory
+    SET stock_quantity = s.new_stock_quantity
+    FROM staging_inventory s
+    WHERE inventory.item_id = s.item_id AND s.batch_id = @batch_id;
+
+    -- Marquer le batch comme terminé
+    INSERT INTO batch_log (batch_id, start_time, end_time, status, batch_type)
+    VALUES (@batch_id, GETDATE(), GETDATE(), 'terminé', 'recalcul_stock');
+
+    -- Nettoyage de la table de staging
+    DELETE FROM staging_inventory WHERE batch_id = @batch_id;
+END TRY
+BEGIN CATCH
+    PRINT 'Erreur lors de l'application des modifications. Batch annulé.';
+END CATCH;
+```
+
+### Recommandations :
+
+* **Journalisation :** Conserver un log des opérations dans une table dédiée pour le suivi des traitements.
+* **Notifications :** Mettre en place des alertes en cas d’échec pour notifier les équipes responsables.
+* **Optimisation :** Prévoir des index sur la table de staging pour accélérer les jointures et les validations.
+* **Tests :** Effectuer des tests complets sur des environnements non productifs avant déploiement.
+
+
 ## Conclusion
 
 Les batchs, qu'ils soient temporels ou événementiels, sont des outils puissants pour automatiser les traitements en backend. Les batchs temporels sont simples à mettre en œuvre mais peuvent générer de la latence, tandis que les batchs événementiels sont plus réactifs mais plus complexes à gérer. La clé est de choisir le type de batch en fonction des besoins spécifiques du traitement et des contraintes du système.
-
-
-
-
-
-
 
 
 
