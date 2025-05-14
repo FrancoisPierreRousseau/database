@@ -7,7 +7,7 @@
   - [3. Gestion des batchs toutes les 5 minutes](#3-gestion-des-batchs-toutes-les-5-minutes)
   - [4. Exemple de batch toutes les 5 minutes](#4-exemple-de-batch-toutes-les-5-minutes)
   - [5. Gestion des pannes dans les batchs](#5-gestion-des-pannes-dans-les-batchs)
-  - [6. Déclenchement des Batchs via des Événements dans Oracle et SQL Server](#6. Déclenchement des Batchs via des Événements dans Oracle et SQL Server)
+  - [6. Déclenchement des Batchs via des Événements dans Oracle et SQL Server](#6-déclenchement-des-batchs-via-des-événements-dans-oracle-et-sql-server)
   - [7. Conclusion](#6-conclusion)
 
 ### Gestion des Batchs : Avantages, Inconvénients et Gestion des Pannes
