@@ -321,6 +321,121 @@ END CATCH;
 * **Optimisation :** Prévoir des index sur la table de staging pour accélérer les jointures et les validations.
 * **Tests :** Effectuer des tests complets sur des environnements non productifs avant déploiement.
 
+## Comparaison entre Batchs Événementiels et Triggers
+
+Les triggers et les batchs événementiels sont deux mécanismes permettant d'exécuter des traitements suite à des événements, mais ils diffèrent par leur fonctionnement et leurs implications.
+
+### Pourquoi les Batchs Événementiels sont Préférables aux Triggers ?
+
+1. **Scalabilité :**
+
+* Les triggers s'exécutent immédiatement et individuellement, ce qui peut provoquer des blocages et des verrous en cas de forte volumétrie.
+* Les batchs événementiels regroupent plusieurs événements et les traitent en lot, minimisant ainsi les conflits de verrouillage et optimisant les performances.
+
+2. **Gestion des Erreurs :**
+
+* Les triggers font partie de la transaction principale. Si une erreur survient, toute la transaction peut échouer.
+* Les batchs événementiels stockent les modifications de manière temporaire et ne les appliquent qu'une fois validées, permettant des rollbacks plus fins et plus contrôlés.
+
+3. **Réversibilité :**
+
+* Les triggers appliquent immédiatement les modifications, ce qui complique les retours en arrière.
+* Les batchs événementiels permettent de vérifier les modifications dans une table de staging avant de les appliquer, rendant le rollback plus facile.
+
+4. **Observabilité et Monitoring :**
+
+* Les triggers sont intégrés dans la logique transactionnelle de la base de données, rendant leur suivi plus complexe.
+* Les batchs événementiels peuvent être journalisés et monitorés indépendamment, offrant une meilleure traçabilité des opérations.
+
+### Exemples :
+
+* Avec Triggers :
+
+```sql
+CREATE TRIGGER UpdateStock
+AFTER INSERT ON Orders
+FOR EACH ROW
+BEGIN
+   UPDATE Inventory SET stock_quantity = stock_quantity - NEW.quantity WHERE item_id = NEW.item_id;
+END;
+```
+
+* Avec Batch Événementiel :
+
+1. Insertion dans la table de staging :
+
+```sql
+INSERT INTO staging_events (event_type, payload) VALUES ('ORDER_UPDATE', '{"item_id": 1, "quantity": 5}');
+```
+
+2. Batch de traitement :
+
+```sql
+DECLARE @batch_id INT = (SELECT MAX(batch_id) FROM staging_events WHERE processed = 0);
+
+BEGIN TRANSACTION;
+
+-- Appliquer les modifications
+UPDATE Inventory
+SET stock_quantity = stock_quantity - e.payload.value('quantity', 'INT')
+FROM staging_events e
+WHERE e.processed = 0;
+
+-- Marquer les événements comme traités
+UPDATE staging_events SET processed = 1 WHERE batch_id = @batch_id;
+
+COMMIT;
+```
+
+## Gestion des Transactions Atomiques pour Certains Champs
+
+Dans certains cas, il est pertinent de permettre des modifications indépendantes pour certains champs tout en appliquant une transaction atomique sur d'autres champs critiques.
+
+### Pourquoi cette Approche ?
+
+* **Optimisation des Performances :** Les transactions atomiques peuvent être limitées aux champs critiques pour minimiser les verrous.
+* **Flexibilité :** Les champs non critiques peuvent être mis à jour indépendamment sans affecter la logique transactionnelle des champs critiques.
+
+### Exemple :
+
+Table :
+
+```sql
+CREATE TABLE Orders (
+    order_id INT PRIMARY KEY,
+    status VARCHAR(20),
+    quantity INT,
+    total_amount DECIMAL(10, 2),
+    last_updated DATETIME
+);
+```
+
+Mise à jour indépendante :
+
+```sql
+UPDATE Orders SET status = 'Shipped', last_updated = GETDATE() WHERE order_id = 1;
+```
+
+Transaction atomique :
+
+```sql
+BEGIN TRANSACTION;
+
+BEGIN TRY
+    DECLARE @quantity INT = 10;
+    DECLARE @unit_price DECIMAL(10, 2) = 15.00;
+
+    UPDATE Orders SET quantity = @quantity, total_amount = @quantity * @unit_price WHERE order_id = 1;
+
+    COMMIT;
+END TRY
+BEGIN CATCH
+    ROLLBACK;
+    PRINT 'Erreur lors de la mise à jour atomique.';
+END CATCH;
+```
+
+Cette approche permet de combiner la flexibilité des mises à jour indépendantes avec la robustesse des transactions atomiques pour les champs critiques.
 
 ## Conclusion
 
