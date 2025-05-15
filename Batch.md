@@ -220,43 +220,6 @@ END;
 
 Ces approches permettent de combiner le traitement par batch avec des événements en temps réel, garantissant ainsi une exécution plus réactive tout en préservant la logique de traitement différé.
 
-Dans Oracle et SQL Server, il est possible de déclencher des batchs en réponse à des événements spécifiques, offrant une flexibilité accrue dans la gestion des traitements.
-
-**Oracle :**
-Dans Oracle, les batchs peuvent être déclenchés à l'aide de triggers ou de jobs planifiés via Oracle Scheduler. Par exemple, un job peut être configuré pour s'exécuter lorsqu'une table est modifiée ou lorsqu'un événement spécifique est enregistré.
-
-Exemple :
-
-```sql
-BEGIN
-   DBMS_SCHEDULER.create_job(
-      job_name        => 'batch_triggered_job',
-      job_type        => 'PLSQL_BLOCK',
-      job_action      => 'BEGIN batch_procedure(); END;',
-      event_condition => 'table_update_event',
-      auto_drop       => TRUE
-   );
-END;
-/
-```
-
-**SQL Server :**
-Dans SQL Server, des batchs peuvent être déclenchés via des SQL Server Agent Jobs ou par l'utilisation de Service Broker pour réagir à des événements spécifiques, tels qu'une insertion, une mise à jour ou une suppression dans une table.
-
-Exemple :
-
-```sql
-CREATE TRIGGER TriggerBatchExecution
-ON dbo.Orders
-AFTER INSERT, UPDATE
-AS
-BEGIN
-   EXEC msdb.dbo.sp_start_job N'BatchJobName';
-END;
-```
-
-Ces approches permettent de combiner le traitement par batch avec des événements en temps réel, garantissant ainsi une exécution plus réactive tout en préservant la logique de traitement différé.
-
 
 ## Comparaison des Batchs Temporels et Événementiels
 
