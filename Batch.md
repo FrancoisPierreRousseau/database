@@ -18,10 +18,11 @@
   * [Inconvénients des Batchs Événementiels](#inconvénients-des-batchs-événementiels)
   * [Gestion des Batchs Événementiels](#gestion-des-batchs-événementiels)
   * [Exemple de Batch Événementiel](#exemple-de-batch-événementiel)
-
 * [Comparaison des Batchs Temporels et Événementiels](#comparaison-des-batchs-temporels-et-événementiels)
 * [Gestion des Pannes](#gestion-des-pannes)
 * [Stratégie Recommandée : Stockage Intermédiaire des Modifications](#strategie-recommandee-stockage-intermediaire-des-modifications)
+* [Comparaison entre Batchs Événementiels et Triggers](#comparaison-entre-batchs-événementiels-et-triggers)
+* [Gestion des Transactions Atomiques pour Certains Champs](#gestion-des-transactions-atomiques-pour-certains-champs)
 * [Conclusion](#conclusion)
 
 ---
