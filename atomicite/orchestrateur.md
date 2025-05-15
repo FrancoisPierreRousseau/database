@@ -411,6 +411,152 @@ with DAG('data_sync_workflow', default_args=default_args, schedule_interval='@da
 
 En résumé, Airflow permet de synchroniser des données entre plusieurs bases de données en orchestrant les tâches de manière séquentielle ou parallèle. Cela permet de centraliser le contrôle des workflows, de garantir l'intégrité des données et de documenter chaque étape de la synchronisation.
 
+
+### Gestion des Tables Source et Staging pour l'Affichage des Données aux Utilisateurs dans Airflow
+
+Dans le cadre d'Airflow, il est courant de séparer les données brutes (staging) des données validées (source). Cependant, pour l'affichage des données aux utilisateurs, il est pertinent de créer une vue consolidée qui combine ces deux tables, permettant ainsi de présenter des informations à jour tout en maintenant l'intégrité des données.
+
+---
+
+#### ✅ Pourquoi Combiner les Tables Source et Staging ?
+
+* **Expérience Utilisateur :** Fournir une vue unique qui combine les données validées (source) et les données en cours de traitement (staging).
+* **Gestion des Données Temporairement Incomplètes :** Les données de staging peuvent être marquées comme `PENDING` ou `VALIDATED`, permettant ainsi de différencier les données prêtes à être validées.
+* **Centralisation des Données :** Les utilisateurs accèdent à une seule source d'information (`sales_view`) sans avoir à connaître la structure des tables sous-jacentes.
+
+---
+
+#### ✅ Exemple : Architecture avec Table Source, Staging et Vue Consolidée
+
+**Tables :**
+
+* `sales` - Table Source (données validées)
+* `sales_staging` - Table de Staging (données en cours de traitement)
+* `sales_view` - Vue consolidée pour l'affichage aux utilisateurs
+
+---
+
+#### **Structure des Tables :**
+
+**Table Source - `sales` :**
+
+| sale\_id | customer\_id | product\_id | amount | status    |
+| -------- | ------------ | ----------- | ------ | --------- |
+| 1        | 101          | 1001        | 500    | VALIDATED |
+| 2        | 102          | 1002        | 250    | VALIDATED |
+
+**Table de Staging - `sales_staging` :**
+
+| sale\_id | customer\_id | product\_id | amount | status  |
+| -------- | ------------ | ----------- | ------ | ------- |
+| 3        | 103          | 1003        | 300    | PENDING |
+| 4        | 104          | 1004        | 150    | PENDING |
+
+---
+
+### ✅ Création de la Vue Consolidée :
+
+```sql
+CREATE OR REPLACE VIEW sales_view AS
+SELECT
+    sale_id,
+    customer_id,
+    product_id,
+    amount,
+    status
+FROM
+    sales
+UNION ALL
+SELECT
+    sale_id,
+    customer_id,
+    product_id,
+    amount,
+    status
+FROM
+    sales_staging;
+```
+
+Cette vue `sales_view` permet aux utilisateurs d'accéder à l'ensemble des données disponibles, y compris les données en cours de validation (`PENDING`) et les données déjà validées (`VALIDATED`).
+
+---
+
+#### ✅ Workflow Airflow : Gestion des Données et Actualisation de la Vue
+
+* **Tâche 1 :** Charger les nouvelles données dans `sales_staging`.
+* **Tâche 2 :** Valider et transférer les données de `sales_staging` vers `sales`.
+* **Tâche 3 :** Actualiser la vue `sales_view`.
+
+**DAG : workflow\_data\_sync.py**
+
+```python
+from airflow import DAG
+from airflow.providers.postgres.operators.postgres import PostgresOperator
+from datetime import datetime, timedelta
+
+default_args = {
+    'owner': 'airflow',
+    'start_date': datetime(2025, 5, 1),
+    'retries': 1,
+    'retry_delay': timedelta(minutes=10)
+}
+
+with DAG('workflow_data_sync', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
+
+    # 1. Charger les données dans la table de staging
+    load_staging = PostgresOperator(
+        task_id='load_staging',
+        postgres_conn_id='postgres_default',
+        sql="""
+        COPY sales_staging FROM '/path/to/new_sales_data.csv' WITH CSV HEADER;
+        """
+    )
+
+    # 2. Valider les données et transférer dans la table source
+    validate_and_transfer = PostgresOperator(
+        task_id='validate_and_transfer',
+        postgres_conn_id='postgres_default',
+        sql="""
+        INSERT INTO sales (sale_id, customer_id, product_id, amount, status)
+        SELECT
+            sale_id, customer_id, product_id, amount, 'VALIDATED'
+        FROM sales_staging
+        WHERE status = 'PENDING';
+
+        DELETE FROM sales_staging WHERE status = 'PENDING';
+        """
+    )
+
+    # 3. Créer ou Actualiser la vue consolidée
+    refresh_view = PostgresOperator(
+        task_id='refresh_view',
+        postgres_conn_id='postgres_default',
+        sql="""
+        CREATE OR REPLACE VIEW sales_view AS
+        SELECT
+            sale_id, customer_id, product_id, amount, status
+        FROM sales
+        UNION ALL
+        SELECT
+            sale_id, customer_id, product_id, amount, status
+        FROM sales_staging;
+        """
+    )
+
+    load_staging >> validate_and_transfer >> refresh_view
+```
+
+---
+
+#### ✅ Recommandations :
+
+* **Centraliser l'affichage des données via une vue unique** (`sales_view`), facilitant l'accès aux informations pour les utilisateurs.
+* **Rafraîchir la vue après chaque batch ETL** pour garantir des données actualisées.
+* **Gérer les statuts (`PENDING`, `VALIDATED`) dans les données de staging** pour indiquer clairement l'état des données en cours de traitement.
+
+Cette approche permet de consolider les données sans dupliquer les informations tout en maintenant une distinction claire entre les données validées et celles en cours de traitement.
+
+
 ### ✅ Airflow et le Pattern SAGA : Comparaison et Limitations
 
 Apache Airflow est un orchestrateur de tâches synchrones, tandis que le pattern SAGA est un modèle de gestion des transactions distribuées asynchrones. Comprendre cette distinction est essentiel pour choisir la bonne architecture.
