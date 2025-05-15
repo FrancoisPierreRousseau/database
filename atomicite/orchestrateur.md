@@ -679,6 +679,260 @@ class OrderWorkflow:
 
 En résumé, Airflow est idéal pour les workflows synchrones, tandis que Kafka et Temporal sont conçus pour orchestrer des workflows asynchrones basés sur des événements externes et des transactions distribuées.
 
+### ✅ Quand Passer à Kafka ou Temporal ?
+
+La transition vers des plateformes comme **Kafka** ou **Temporal** se justifie lorsque les workflows deviennent plus complexes, distribués ou asynchrones. Voici les cas d'usage typiques où Kafka et Temporal deviennent plus adaptés qu'Apache Airflow :
+
+#### **1. Gestion des Événements Asynchrones :**
+
+* Si les workflows doivent réagir à des événements externes (`event sourcing`), Kafka devient essentiel pour gérer ces événements en temps réel.
+* Exemple : Un service de commande (`order_service`) publie un événement `ORDER_PLACED`, et les services `inventory_service` et `payment_service` réagissent à cet événement indépendamment.
+
+**Exemple Kafka :**
+
+```python
+from kafka import KafkaProducer, KafkaConsumer
+import json
+
+# Producteur - Publier un événement
+producer = KafkaProducer(bootstrap_servers='localhost:9092')
+producer.send('order_events', json.dumps({'order_id': 123, 'status': 'ORDER_PLACED'}).encode('utf-8'))
+
+# Consommateur - Écouter les événements
+consumer = KafkaConsumer('order_events', bootstrap_servers='localhost:9092')
+for message in consumer:
+    print(f"Received event: {message.value.decode('utf-8')}")
+```
+
+#### **2. Transactions Distribuées avec Compensations (Pattern SAGA) :**
+
+* Si un workflow implique plusieurs microservices avec des transactions distribuées (`reserve_stock`, `debit_account`), Temporal est plus adapté car il intègre des compensations (`rollback`) de manière native.
+* Exemple : Si `reserve_stock` échoue, Temporal exécute `cancel_order` automatiquement.
+
+**Exemple Temporal :**
+
+```python
+from temporalio import workflow
+
+@workflow.defn
+class OrderWorkflow:
+    @workflow.run
+    async def run(self, order_id: int):
+        try:
+            await workflow.execute_activity("create_order", order_id)
+            await workflow.execute_activity("reserve_stock", order_id)
+            await workflow.execute_activity("debit_account", order_id)
+        except Exception:
+            await workflow.execute_activity("cancel_order", order_id)
+            raise
+```
+
+#### **3. Gestion des États Persistants :**
+
+* Si les workflows nécessitent un suivi d'état (`pending`, `processing`, `completed`), Temporal est plus adapté car il maintient les états de chaque étape du workflow.
+* Airflow, étant `stateless`, ne peut pas reprendre une tâche en fonction de son état précédent sans logique personnalisée.
+
+#### **4. Scalabilité Élastique :**
+
+* Si le système doit gérer des millions d'événements par seconde (`high throughput`), Kafka est le choix naturel pour le traitement distribué.
+* Temporal permet également d'exécuter plusieurs instances d'un même workflow sans gérer explicitement la concurrence.
+
+#### **Résumé des Cas d'Usage :**
+
+| **Scénario**                         | **Airflow**    | **Kafka** | **Temporal** |
+| ------------------------------------ | -------------- | --------- | ------------ |
+| Workflows Séquentiels                | ✅              | ❌         | ✅            |
+| Event Sourcing / Événements Externes | ❌              | ✅         | ✅            |
+| Transactions Distribuées (SAGA)      | ❌              | ✅         | ✅            |
+| Gestion des États                    | ❌              | ✅         | ✅            |
+| Scalabilité Élastique                | ✅ (Kubernetes) | ✅         | ✅            |
+
+#### ✅ **Recommandation :**
+
+* Si les workflows sont purement séquentiels et synchrones : **Airflow** est suffisant.
+* Si les workflows nécessitent une orchestration événementielle (`event-driven`) : **Kafka** est indispensable.
+* Si les workflows impliquent des transactions distribuées avec compensation (`SAGA pattern`) : **Temporal** est le choix optimal.
+
+En résumé, Airflow est un excellent point de départ, mais Kafka et Temporal deviennent nécessaires lorsque les workflows évoluent vers des architectures distribuées, asynchrones ou transactionnelles.
+
+### ✅ Airflow pour les Microservices : Est-ce le Bon Choix ?
+
+Apache Airflow est un orchestrateur de workflows orienté tâches (`task-based`). Il est principalement conçu pour orchestrer des workflows séquentiels et synchrones, tels que des pipelines ETL, des traitements batch ou des tâches planifiées. Cependant, lorsqu'il s'agit de microservices asynchrones et distribués, son utilisation présente certaines limitations.
+
+#### **Pourquoi Airflow n’est pas Optimal pour les Microservices ?**
+
+* **Architecture Orientée Tâches :** Airflow est conçu pour orchestrer des tâches définies dans des DAGs (`Directed Acyclic Graph`). Chaque tâche est exécutée indépendamment et séquentiellement.
+* **Pas de Gestion d'Événements Asynchrones :** Airflow ne gère pas les événements (`event sourcing`) comme Kafka ou Temporal. Il ne peut donc pas réagir en temps réel à des événements externes (`ORDER_PLACED`, `PAYMENT_COMPLETED`).
+* **Pas de Gestion d'État Persistant :** Airflow est `stateless`, ce qui signifie qu'il n'a pas de gestion d'état transactionnelle native, contrairement à Temporal qui maintient l'état de chaque étape du workflow.
+* **Compensations Manuelles :** Pour implémenter des compensations (`rollback`), il faut coder explicitement des tâches de compensation (`trigger_rule='one_failed'`). Cela n’est pas natif et nécessite une logique personnalisée.
+
+#### **Exemple : Orchestration Microservices avec Airflow :**
+
+Dans ce cas, Airflow peut être utilisé pour orchestrer des services synchrones :
+
+* **Tâche 1 :** Créer une commande (`create_order`).
+* **Tâche 2 :** Réserver le stock (`reserve_stock`).
+* **Tâche 3 :** Débiter le compte (`debit_account`).
+
+```python
+from airflow import DAG
+from airflow.providers.postgres.operators.postgres import PostgresOperator
+from datetime import datetime, timedelta
+
+default_args = {
+    'owner': 'airflow',
+    'start_date': datetime(2025, 5, 1),
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5)
+}
+
+with DAG('microservice_workflow', default_args=default_args, schedule_interval='@daily') as dag:
+
+    create_order = PostgresOperator(
+        task_id='create_order',
+        postgres_conn_id='postgres_default',
+        sql="INSERT INTO orders (order_id, status) VALUES (1, 'CREATED');"
+    )
+
+    reserve_stock = PostgresOperator(
+        task_id='reserve_stock',
+        postgres_conn_id='postgres_default',
+        sql="UPDATE inventory SET reserved = reserved + 1 WHERE product_id = 101;"
+    )
+
+    debit_account = PostgresOperator(
+        task_id='debit_account',
+        postgres_conn_id='postgres_default',
+        sql="UPDATE accounts SET balance = balance - 100 WHERE account_id = 1;"
+    )
+
+    create_order >> reserve_stock >> debit_account
+```
+
+#### ✅ **Quand Utiliser Kafka ou Temporal ?**
+
+* **Kafka :** Si chaque microservice doit publier ou consommer des événements (`event-driven architecture`), Kafka devient le choix naturel. Exemple : `ORDER_PLACED`, `PAYMENT_COMPLETED` sont des événements consommés par différents services.
+* **Temporal :** Si les workflows nécessitent des transactions distribuées avec des compensations (`rollback`) et une gestion d’état persistante, Temporal est plus adapté.
+
+#### **Résumé : Airflow vs Kafka vs Temporal :**
+
+| **Scénario**              | **Airflow** | **Kafka**     | **Temporal** |
+| ------------------------- | ----------- | ------------- | ------------ |
+| Orchestration Synchrone   | ✅           | ❌             | ✅            |
+| Event Sourcing / Pub-Sub  | ❌           | ✅             | ✅            |
+| Transactions Distribuées  | ❌           | ❌             | ✅            |
+| Gestion d’État Persistant | ❌           | ✅ (Event Log) | ✅            |
+| Rejeu des Événements      | ❌           | ✅             | ✅            |
+
+En conclusion, **Airflow est le choix par défaut pour les workflows synchrones et séquentiels**, mais dès que les workflows deviennent asynchrones, basés sur des événements ou transactionnels, Kafka et Temporal deviennent plus adaptés pour orchestrer des microservices.
+
+### Première Migration vers une Architecture Microservices avec Airflow, Kafka et Temporal
+
+Lorsqu’on envisage une migration vers une architecture microservices, il est essentiel d’adopter une approche progressive afin de limiter les risques et de garantir la stabilité du système existant. Voici une approche structurée pour réussir cette transition :
+
+#### **Phase 1 : Externalisation des Tâches avec Airflow**
+
+* **Objectif :** Séparer les composants monolithiques en services indépendants orchestrés par Airflow.
+* **Pourquoi Airflow ?** Airflow permet d’orchestrer des tâches séquentielles de manière centralisée, tout en assurant le monitoring et le logging des opérations.
+
+**Exemple : Orchestration des tâches synchrones avec Airflow :**
+
+```python
+from airflow import DAG
+from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.operators.python import PythonOperator
+from datetime import datetime, timedelta
+
+default_args = {
+    'owner': 'airflow',
+    'start_date': datetime(2025, 5, 1),
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5)
+}
+
+with DAG('first_migration', default_args=default_args, schedule_interval='@daily') as dag:
+
+    create_order = PostgresOperator(
+        task_id='create_order',
+        postgres_conn_id='postgres_conn',
+        sql="INSERT INTO orders (id, status) VALUES (1, 'CREATED');"
+    )
+
+    reserve_stock = PostgresOperator(
+        task_id='reserve_stock',
+        postgres_conn_id='postgres_conn',
+        sql="UPDATE inventory SET reserved = reserved + 1 WHERE product_id = 101;"
+    )
+
+    debit_account = PostgresOperator(
+        task_id='debit_account',
+        postgres_conn_id='postgres_conn',
+        sql="UPDATE accounts SET balance = balance - 100 WHERE account_id = 1;"
+    )
+
+    create_order >> reserve_stock >> debit_account
+```
+
+#### **Phase 2 : Introduction de la Communication Asynchrone avec Kafka**
+
+* **Objectif :** Découpler les services en les faisant communiquer par des événements (`event sourcing`).
+* **Pourquoi Kafka ?** Kafka permet de gérer la communication asynchrone entre services tout en assurant la persistance des événements pour les rejouer si nécessaire.
+
+**Exemple : Publication d’événements avec Kafka :**
+
+```python
+from kafka import KafkaProducer
+import json
+
+producer = KafkaProducer(
+    bootstrap_servers='localhost:9092',
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
+
+order_event = {"order_id": 123, "status": "ORDER_PLACED"}
+producer.send('order_events', value=order_event)
+```
+
+#### **Phase 3 : Gestion des Transactions Distribuées avec Temporal**
+
+* **Objectif :** Gérer les transactions distribuées avec des compensations (`rollback`) pour garantir l’intégrité des données.
+* **Pourquoi Temporal ?** Temporal permet de structurer des workflows transactionnels tout en conservant un état persistant et en implémentant des tâches compensatoires.
+
+**Exemple : Workflow transactionnel avec Temporal :**
+
+```python
+from temporalio import workflow
+
+@workflow.defn
+class OrderWorkflow:
+    @workflow.run
+    async def run(self, order_id: int):
+        try:
+            await workflow.execute_activity("create_order", order_id)
+            await workflow.execute_activity("reserve_stock", order_id)
+            await workflow.execute_activity("debit_account", order_id)
+        except Exception:
+            await workflow.execute_activity("cancel_order", order_id)
+            raise
+```
+
+#### ✅ **Résumé des Phases :**
+
+| **Phase**                  | **Objectif**                       | **Outil** |
+| -------------------------- | ---------------------------------- | --------- |
+| Externalisation des tâches | Orchestration séquentielle         | Airflow   |
+| Communication asynchrone   | Gestion des événements asynchrones | Kafka     |
+| Transactions distribuées   | Gestion des compensations (`SAGA`) | Temporal  |
+
+#### ✅ **Recommandation :**
+
+* Commencer par externaliser les composants monolithiques en tâches indépendantes orchestrées par **Airflow**.
+* Introduire **Kafka** pour découpler les services et gérer les événements en temps réel.
+* Utiliser **Temporal** pour implémenter des transactions distribuées avec gestion des compensations et des états.
+
+Cette approche progressive permet de migrer vers une architecture microservices tout en minimisant les risques et en assurant la stabilité du système existant.
+
+
 ### ✅ Recommandations :
 
 * Configurer `retries` et `retry_delay` pour les tâches critiques.
