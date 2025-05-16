@@ -1,12 +1,16 @@
-﻿### Monitoring et Gestion des Pannes des Batchs SQL avec Apache Airflow
+﻿## Monitoring et Gestion des Pannes des Batchs SQL avec Apache Airflow
 
-### ✅ Introduction
+
+- [Introduction](#introduction)
+- [Pourquoi Utiliser Apache Airflow pour le Monitoring des Batchs SQL ?](#pourquoi-utiliser-apache-airflow-pour-le-monitoring-des-batchs-sql)
+
+### Introduction
 
 Apache Airflow est une plateforme d'orchestration de workflows qui permet de gérer, observer et monitorer des batchs SQL de manière efficace. Grâce à ses opérateurs SQL dédiés, ses fonctionnalités de gestion des erreurs et ses outils de monitoring, Airflow est une solution robuste pour le suivi des traitements SQL complexes.
 
 ---
 
-### ✅ Pourquoi Utiliser Apache Airflow pour le Monitoring des Batchs SQL ?
+### Pourquoi Utiliser Apache Airflow pour le Monitoring des Batchs SQL ?
 
 1. **Interface Utilisateur Complète :**
 
