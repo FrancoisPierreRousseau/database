@@ -6,6 +6,14 @@
 - [Exemples d'Implémentation](#exemples-dimplémentation-)
 - [Opérateurs SQL Disponibles dans Airflow](#opérateurs-sql-disponibles-dans-airflow-)
 - [Gestion de l'Atomicité dans Airflow](#-gestion-de-latomicité-dans-airflow-)
+- [Connexion à Plusieurs Bases de Données dans Airflow](#-connexion-à-plusieurs-bases-de-données-dans-airflow-)
+- [Synchronisation des Données entre Bases de Données avec Airflow](#-connexion-à-plusieurs-bases-de-données-dans-airflow-)
+- [Gestion des Tables Source et Staging pour l'Affichage des Données aux Utilisateurs dans Airflow](#gestion-des-tables-source-et-staging-pour-laffichage-des-données-aux-utilisateurs-dans-airflow)
+- [Création de la Vue Consolidée](#-création-de-la-vue-consolidée-)
+- [Airflow et le Pattern SAGA : Comparaison et Limitations](#-airflow-et-le-pattern-saga--comparaison-et-limitations)
+- [Gestion des Compensations dans Airflow vs Pattern SAGA](#-gestion-des-compensations-dans-airflow-vs-pattern-saga)
+- [Gestion des Événements Externes avec Kafka et Temporal](#-gestion-des-événements-externes-avec-kafka-et-temporal-)
+- [Quand Passer à Kafka ou Temporal ?](#-quand-passer-à-kafka-ou-temporal-)
 
 ### Introduction
 
