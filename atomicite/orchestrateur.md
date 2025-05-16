@@ -14,6 +14,7 @@
 - [Gestion des Compensations dans Airflow vs Pattern SAGA](#-gestion-des-compensations-dans-airflow-vs-pattern-saga)
 - [Gestion des Événements Externes avec Kafka et Temporal](#-gestion-des-événements-externes-avec-kafka-et-temporal-)
 - [Quand Passer à Kafka ou Temporal ?](#-quand-passer-à-kafka-ou-temporal-)
+- [Airflow pour les Microservices : Est-ce le Bon Choix ?](#-airflow-pour-les-microservices--est-ce-le-bon-choix-)
 
 ### Introduction
 
