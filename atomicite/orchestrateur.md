@@ -3,6 +3,7 @@
 
 - [Introduction](#introduction)
 - [Pourquoi Utiliser Apache Airflow pour le Monitoring des Batchs SQL ?](#pourquoi-utiliser-apache-airflow-pour-le-monitoring-des-batchs-sql-?)
+- [Exemples d'Implémentation](#exemples-d-implementation)
 
 ### Introduction
 
@@ -33,7 +34,7 @@ Apache Airflow est une plateforme d'orchestration de workflows qui permet de gé
 
 ---
 
-### ✅ Exemples d'Implémentation :
+### Exemples d'Implémentation
 
 #### 1. Gestion des Retrys :
 
