@@ -103,7 +103,7 @@ Les logs des tâches SQL sont accessibles via l'interface utilisateur et peuvent
 
 ---
 
-### ✅ Opérateurs SQL Disponibles dans Airflow :
+### Opérateurs SQL Disponibles dans Airflow :
 
 Apache Airflow propose une large gamme d'opérateurs SQL pour interagir avec différentes bases de données, allant bien au-delà des classiques `PostgresOperator`, `MySqlOperator` et `MSSqlOperator`. Voici une liste complète des opérateurs SQL disponibles :
 
