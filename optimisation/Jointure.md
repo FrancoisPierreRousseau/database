@@ -188,7 +188,7 @@ GROUP BY c.Name;
 
 ### 🧩 d. Sous-requêtes dans les `JOIN` (`INNER`, `LEFT`, etc.)
 
-Les sous-requêtes utilisées directement dans une clause de jointure sont appelées **tables dérivées**. Elles **ne sont pas corrélées**, mais leur impact sur les performances dépend fortement de leur structure.
+Les sous-requêtes utilisées directement dans une clause de jointure sont appelées **tables dérivées**. Elles **ne sont pas corrélées**, mais leur impact sur les performances dépend fortement de leur structure et du contexte d’utilisation.
 
 #### ✅ Cas recommandés : sous-requête dérivée optimisable
 
@@ -206,7 +206,15 @@ LEFT JOIN (
 * Elle peut **profiter d’index** sur `Orders.CustomerID`.
 * Le moteur peut l’optimiser comme une **vraie table temporaire**.
 
-#### ❌ Cas à éviter : sous-requête complexe ou imbriquée
+#### ⚠️ Attention : les sous-requêtes dans les `JOIN` ne sont pas toujours bénéfiques
+
+Bien qu'elles soient lisibles et structurantes, leur impact sur les performances dépend de :
+
+* La volumétrie de la sous-requête
+* La présence ou non d’**index** sur les colonnes concernées
+* L'absence de **sous-requêtes corrélées imbriquées**, qui peuvent fortement pénaliser le plan d'exécution
+
+#### ❌ Exemple inefficace :
 
 ```sql
 SELECT *
@@ -218,20 +226,16 @@ JOIN (
 ) o ON o.CustomerID = c.CustomerID;
 ```
 
-* La sous-requête **contient une requête corrélée interne** (`EXISTS`).
-* Elle est plus difficile à optimiser.
-* Peut entraîner des **boucles imbriquées coûteuses** si non indexée.
+➡️ Cette sous-requête contient une **corrélation interne**, rendant l’optimisation difficile.
 
----
+📌 **Conclusion** :
+Utilise les sous-requêtes dans les `JOIN` lorsque :
 
-### 📌 Bonnes pratiques :
+* Elles sont **autonomes** (non corrélées)
+* Elles sont **filtrées et agrégées intelligemment**
+* Elles s’appuient sur des **index efficaces**
 
-| Situation                                   | Recommandation             |
-| ------------------------------------------- | -------------------------- |
-| Sous-requête agrégée et bien filtrée        | ✅ Recommandée              |
-| Index présents sur les colonnes de jointure | ✅ Aide fortement le plan   |
-| Sous-requête imbriquée avec corrélation     | ❌ À éviter                 |
-| Sous-requête volumineuse sans filtre        | ⚠️ À tester avec `EXPLAIN` |
+Et comme toujours : **vérifie leur impact avec `EXPLAIN` ou `SHOWPLAN`**.
 
 ---
 
@@ -298,10 +302,5 @@ SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);
 Le choix entre `INNER JOIN` et `LEFT JOIN` ne doit jamais être arbitraire. Il dépend du **besoin fonctionnel**, mais aussi de la **volumétrie** et de la **structure des données**.
 
 Une requête bien écrite peut réduire les temps d'exécution de plusieurs minutes à quelques secondes. À l’inverse, une mauvaise utilisation des jointures peut gravement compromettre les performances, notamment en production.
-
-
-
-
-
 
 
