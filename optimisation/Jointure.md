@@ -188,9 +188,12 @@ GROUP BY c.Name;
 
 ### 🧩 d. Sous-requêtes dans les `JOIN` (`INNER`, `LEFT`, etc.)
 
-Les sous-requêtes utilisées directement dans une clause de jointure sont appelées **tables dérivées**. Elles **ne sont pas corrélées**, mais leur impact sur les performances dépend fortement de leur structure et du contexte d’utilisation.
+Les sous-requêtes utilisées dans une clause de `JOIN` sont appelées **tables dérivées**. Elles sont généralement **exécutées une seule fois**, et peuvent être **très performantes** si elles sont bien construites.
+Mais leur efficacité dépend de plusieurs facteurs : **structure interne, corrélation, indexation et volumétrie**.
 
-#### ✅ Cas recommandés : sous-requête dérivée optimisable
+---
+
+#### ✅ Cas recommandés : sous-requête dérivée **autonome et optimisable**
 
 ```sql
 SELECT c.Name, o.TotalSales
@@ -202,9 +205,76 @@ LEFT JOIN (
 ) o ON o.CustomerID = c.CustomerID;
 ```
 
-* La sous-requête est **exécutée une seule fois**.
-* Elle peut **profiter d’index** sur `Orders.CustomerID`.
-* Le moteur peut l’optimiser comme une **vraie table temporaire**.
+✔️ Cette sous-requête est :
+
+* **Indépendante** (aucune dépendance avec la table `Customers`)
+* Facilement **optimisable** par le moteur SQL
+* Compatible avec des **index sur `Orders.CustomerID`**
+
+Elle est exécutée une seule fois, peut être **matérialisée**, et offre un plan efficace.
+
+---
+
+#### ⚠️ Sous-requêtes contenant des `EXISTS` ou des `JOIN` internes
+
+Tu peux utiliser des `JOIN` ou `EXISTS` à l’intérieur d’une sous-requête joinée, **à condition qu’ils ne soient pas corrélés à l’extérieur**.
+
+```sql
+SELECT c.Name
+FROM Customers c
+LEFT JOIN (
+    SELECT DISTINCT o.CustomerID
+    FROM Orders o
+    WHERE EXISTS (
+        SELECT 1 FROM Audit a WHERE a.OrderID = o.ID
+    )
+) filtered_orders ON filtered_orders.CustomerID = c.CustomerID;
+```
+
+✅ Ici :
+
+* La sous-requête avec `EXISTS` est **indépendante de `Customers`**
+* Elle peut bénéficier d’index sur `Orders.ID` et `Audit.OrderID`
+* Le moteur peut optimiser avec des **semi-joins**
+
+---
+
+#### ❌ Cas à éviter : sous-requête joinée **corrélée**
+
+```sql
+SELECT *
+FROM Customers c
+JOIN (
+    SELECT * FROM Orders o
+    WHERE EXISTS (
+        SELECT 1
+        FROM Audit a
+        WHERE a.OrderID = o.ID AND a.Region = c.Region  -- ❌ dépendance à la table principale
+    )
+) x ON x.CustomerID = c.CustomerID;
+```
+
+⛔ Cette sous-requête dépend de `c.Region`, ce qui la rend **corrélée**.
+Résultat :
+
+* Elle est exécutée **une fois par ligne de `Customers`**
+* Le moteur **ne peut pas l’optimiser comme une table dérivée**
+* Le plan d’exécution devient **très coûteux**
+
+---
+
+#### 📌 Conclusion :
+
+✔️ Utilise des sous-requêtes dans les `JOIN` quand :
+
+* Elles sont **non corrélées à la requête principale**
+* Elles sont **filtrées ou agrégées efficacement**
+* Elles bénéficient d’**index adaptés**
+
+❌ Évite toute **corrélation implicite avec la requête extérieure**, surtout dans des jointures complexes.
+
+🛠️ Toujours vérifier le **plan d’exécution (`EXPLAIN`, `SHOWPLAN`)** pour confirmer que le moteur SQL les traite comme prévu.
+
 
 #### ⚠️ Attention : les sous-requêtes dans les `JOIN` ne sont pas toujours bénéfiques
 
@@ -302,5 +372,3 @@ SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);
 Le choix entre `INNER JOIN` et `LEFT JOIN` ne doit jamais être arbitraire. Il dépend du **besoin fonctionnel**, mais aussi de la **volumétrie** et de la **structure des données**.
 
 Une requête bien écrite peut réduire les temps d'exécution de plusieurs minutes à quelques secondes. À l’inverse, une mauvaise utilisation des jointures peut gravement compromettre les performances, notamment en production.
-
-
