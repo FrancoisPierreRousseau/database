@@ -275,38 +275,6 @@ Résultat :
 
 🛠️ Toujours vérifier le **plan d’exécution (`EXPLAIN`, `SHOWPLAN`)** pour confirmer que le moteur SQL les traite comme prévu.
 
-
-#### ⚠️ Attention : les sous-requêtes dans les `JOIN` ne sont pas toujours bénéfiques
-
-Bien qu'elles soient lisibles et structurantes, leur impact sur les performances dépend de :
-
-* La volumétrie de la sous-requête
-* La présence ou non d’**index** sur les colonnes concernées
-* L'absence de **sous-requêtes corrélées imbriquées**, qui peuvent fortement pénaliser le plan d'exécution
-
-#### ❌ Exemple inefficace :
-
-```sql
-SELECT *
-FROM Customers c
-JOIN (
-    SELECT * FROM Orders WHERE Status = 'actif' AND EXISTS (
-        SELECT 1 FROM Audit WHERE Audit.OrderID = Orders.ID
-    )
-) o ON o.CustomerID = c.CustomerID;
-```
-
-➡️ Cette sous-requête contient une **corrélation interne**, rendant l’optimisation difficile.
-
-📌 **Conclusion** :
-Utilise les sous-requêtes dans les `JOIN` lorsque :
-
-* Elles sont **autonomes** (non corrélées)
-* Elles sont **filtrées et agrégées intelligemment**
-* Elles s’appuient sur des **index efficaces**
-
-Et comme toujours : **vérifie leur impact avec `EXPLAIN` ou `SHOWPLAN`**.
-
 ---
 
 ## 🔍 **7. Utilisation des indexes sur champs ENUM ou faibles cardinalités**
