@@ -186,6 +186,55 @@ GROUP BY c.Name;
 
 ---
 
+### 🧩 d. Sous-requêtes dans les `JOIN` (`INNER`, `LEFT`, etc.)
+
+Les sous-requêtes utilisées directement dans une clause de jointure sont appelées **tables dérivées**. Elles **ne sont pas corrélées**, mais leur impact sur les performances dépend fortement de leur structure.
+
+#### ✅ Cas recommandés : sous-requête dérivée optimisable
+
+```sql
+SELECT c.Name, o.TotalSales
+FROM Customers c
+LEFT JOIN (
+    SELECT CustomerID, SUM(Sales) AS TotalSales
+    FROM Orders
+    GROUP BY CustomerID
+) o ON o.CustomerID = c.CustomerID;
+```
+
+* La sous-requête est **exécutée une seule fois**.
+* Elle peut **profiter d’index** sur `Orders.CustomerID`.
+* Le moteur peut l’optimiser comme une **vraie table temporaire**.
+
+#### ❌ Cas à éviter : sous-requête complexe ou imbriquée
+
+```sql
+SELECT *
+FROM Customers c
+JOIN (
+    SELECT * FROM Orders WHERE Status = 'actif' AND EXISTS (
+        SELECT 1 FROM Audit WHERE Audit.OrderID = Orders.ID
+    )
+) o ON o.CustomerID = c.CustomerID;
+```
+
+* La sous-requête **contient une requête corrélée interne** (`EXISTS`).
+* Elle est plus difficile à optimiser.
+* Peut entraîner des **boucles imbriquées coûteuses** si non indexée.
+
+---
+
+### 📌 Bonnes pratiques :
+
+| Situation                                   | Recommandation             |
+| ------------------------------------------- | -------------------------- |
+| Sous-requête agrégée et bien filtrée        | ✅ Recommandée              |
+| Index présents sur les colonnes de jointure | ✅ Aide fortement le plan   |
+| Sous-requête imbriquée avec corrélation     | ❌ À éviter                 |
+| Sous-requête volumineuse sans filtre        | ⚠️ À tester avec `EXPLAIN` |
+
+---
+
 ## 🔍 **7. Utilisation des indexes sur champs ENUM ou faibles cardinalités**
 
 ### Avantages :
@@ -249,3 +298,10 @@ SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);
 Le choix entre `INNER JOIN` et `LEFT JOIN` ne doit jamais être arbitraire. Il dépend du **besoin fonctionnel**, mais aussi de la **volumétrie** et de la **structure des données**.
 
 Une requête bien écrite peut réduire les temps d'exécution de plusieurs minutes à quelques secondes. À l’inverse, une mauvaise utilisation des jointures peut gravement compromettre les performances, notamment en production.
+
+
+
+
+
+
+
