@@ -7,7 +7,6 @@
   - [Avantages des Batchs Temporels](#avantages-des-batchs-temporels)
   - [Inconvénients des Batchs Temporels](#inconvénients-des-batchs-temporels)
   - [Gestion des Batchs Temporels](#gestion-des-batchs-temporels)
-  - [Bonnes pratiques pour l’asynchronicité et les ressources partagées](#Bonnes-pratiques-pour-lasynchronicit-et-les-ressources-partagées)
   - [Exemple de Batch Temporel](#exemple-de-batch-temporel)
 
 - [Batchs Événementiels](#batchs-événementiels)
@@ -15,6 +14,7 @@
   - [Avantages des Batchs Événementiels](#avantages-des-batchs-événementiels)
   - [Inconvénients des Batchs Événementiels](#inconvénients-des-batchs-événementiels)
   - [Gestion des Batchs Événementiels](#gestion-des-batchs-événementiels)
+  - [Bonnes pratiques pour l’asynchronicité et les ressources partagées](#bonnes-pratiques-pour-lasynchronicité-et-les-ressources-partagées)
   - [Exemple de Batch Événementiel](#exemple-de-batch-événementiel)
 
 - [Comparaison des Batchs Temporels et Événementiels](#comparaison-des-batchs-temporels-et-événementiels)
