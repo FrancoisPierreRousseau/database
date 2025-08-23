@@ -132,6 +132,39 @@ Les batchs événementiels sont déclenchés par des événements tels qu'une mi
 
 > ⚠️ L’utilisation directe de **triggers** pour lancer des jobs est déconseillée, car elle peut entraîner une surcharge du système et ne garantit pas un ordre cohérent d’exécution des transactions.
 
+### Bonnes pratiques pour l’asynchronicité et les ressources partagées
+
+1. **Champs calculés ou dérivés**
+
+   - Les champs mis à jour par batch événementiel doivent être **calculés et non modifiables directement**.
+   - Exemple : `stock_available_for_orders` calculé à partir de `stock_real`.
+
+2. **Table de staging / stockage intermédiaire**
+
+   - Écrire les modifications dans une table intermédiaire avant d’appliquer aux tables sources.
+
+3. **Verrous ou indicateurs (`in_progress`)**
+
+   - Marquer les ressources en cours de traitement pour éviter les conflits.
+   - Préférer **verrous optimistes** ou marqueurs plutôt que verrous pessimistes lourds.
+
+4. **Priorisation des événements**
+
+   - Sur Oracle AQ : utiliser le champ `priority`.
+   - Sur SQL Server : utiliser plusieurs queues ou trier par champ `priority` côté worker.
+
+5. **Fusion et dé-duplication des événements**
+
+   - Grouper les événements sur la même ressource pour limiter les conflits et optimiser le traitement.
+
+6. **Retry et backoff**
+
+   - Si la ressource est occupée, remettre le message en queue après un délai.
+
+7. **Monitoring et alerting**
+
+   - Surveiller la longueur de la queue, les verrous bloqués, le temps de traitement et les échecs.
+
 ### Exemple de Batch Événementiel
 
 Dans Oracle et SQL Server, il est possible de déclencher des batchs en réponse à des événements spécifiques, offrant une flexibilité accrue dans la gestion des traitements.
