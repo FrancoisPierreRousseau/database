@@ -1,29 +1,27 @@
-﻿
+﻿## Sommaire
 
+- [Introduction aux Batchs](#introduction-aux-batchs)
 
-## Sommaire
+- [Batchs Temporels](#batchs-temporels)
 
-* [Introduction aux Batchs](#introduction-aux-batchs)
+  - [Avantages des Batchs Temporels](#avantages-des-batchs-temporels)
+  - [Inconvénients des Batchs Temporels](#inconvénients-des-batchs-temporels)
+  - [Gestion des Batchs Temporels](#gestion-des-batchs-temporels)
+  - [Exemple de Batch Temporel](#exemple-de-batch-temporel)
 
-* [Batchs Temporels](#batchs-temporels)
+- [Batchs Événementiels](#batchs-événementiels)
 
-  * [Avantages des Batchs Temporels](#avantages-des-batchs-temporels)
-  * [Inconvénients des Batchs Temporels](#inconvénients-des-batchs-temporels)
-  * [Gestion des Batchs Temporels](#gestion-des-batchs-temporels)
-  * [Exemple de Batch Temporel](#exemple-de-batch-temporel)
+  - [Avantages des Batchs Événementiels](#avantages-des-batchs-événementiels)
+  - [Inconvénients des Batchs Événementiels](#inconvénients-des-batchs-événementiels)
+  - [Gestion des Batchs Événementiels](#gestion-des-batchs-événementiels)
+  - [Exemple de Batch Événementiel](#exemple-de-batch-événementiel)
 
-* [Batchs Événementiels](#batchs-événementiels)
-
-  * [Avantages des Batchs Événementiels](#avantages-des-batchs-événementiels)
-  * [Inconvénients des Batchs Événementiels](#inconvénients-des-batchs-événementiels)
-  * [Gestion des Batchs Événementiels](#gestion-des-batchs-événementiels)
-  * [Exemple de Batch Événementiel](#exemple-de-batch-événementiel)
-* [Comparaison des Batchs Temporels et Événementiels](#comparaison-des-batchs-temporels-et-événementiels)
-* [Gestion des Pannes](#gestion-des-pannes)
-* [Stratégie Recommandée : Stockage Intermédiaire des Modifications](#strategie-recommandee-stockage-intermediaire-des-modifications)
-* [Comparaison entre Batchs Événementiels et Triggers](#comparaison-entre-batchs-événementiels-et-triggers)
-* [Gestion des Transactions Atomiques pour Certains Champs](#gestion-des-transactions-atomiques-pour-certains-champs)
-* [Conclusion](#conclusion)
+- [Comparaison des Batchs Temporels et Événementiels](#comparaison-des-batchs-temporels-et-événementiels)
+- [Gestion des Pannes](#gestion-des-pannes)
+- [Stratégie Recommandée : Stockage Intermédiaire des Modifications](#strategie-recommandee-stockage-intermediaire-des-modifications)
+- [Comparaison entre Batchs Événementiels et Triggers](#comparaison-entre-batchs-événementiels-et-triggers)
+- [Gestion des Transactions Atomiques pour Certains Champs](#gestion-des-transactions-atomiques-pour-certains-champs)
+- [Conclusion](#conclusion)
 
 ---
 
@@ -37,23 +35,23 @@ Les batchs temporels s'exécutent à des intervalles réguliers, par exemple tou
 
 ### Avantages des Batchs Temporels
 
-* Réduction des verrous transactionnels.
-* Scalabilité.
-* Centralisation des traitements.
-* Gestion simplifiée des erreurs.
+- Réduction des verrous transactionnels.
+- Scalabilité.
+- Centralisation des traitements.
+- Gestion simplifiée des erreurs.
 
 ### Inconvénients des Batchs Temporels
 
-* Latence accrue.
-* Charge serveur accrue.
-* Risque de chevauchement des batchs.
-* Gestion complexe des conflits de données.
+- Latence accrue.
+- Charge serveur accrue.
+- Risque de chevauchement des batchs.
+- Gestion complexe des conflits de données.
 
 ### Gestion des Batchs Temporels
 
-* Vérifier l'achèvement des batchs précédents avant de lancer un nouveau batch.
-* Limiter le traitement aux données modifiées (basé sur un champ `updated_at`).
-* Implémenter des mécanismes de timeout et de retry.
+- Vérifier l'achèvement des batchs précédents avant de lancer un nouveau batch.
+- Limiter le traitement aux données modifiées (basé sur un champ `updated_at`).
+- Implémenter des mécanismes de timeout et de retry.
 
 ### Exemple de Batch Temporel
 
@@ -81,13 +79,13 @@ END
 
 -- Démarre le batch
 DECLARE @batch_id INT = (SELECT ISNULL(MAX(batch_id), 0) + 1 FROM batch_log);
-INSERT INTO batch_log (batch_id, start_time, status, batch_type) 
+INSERT INTO batch_log (batch_id, start_time, status, batch_type)
 VALUES (@batch_id, GETDATE(), 'en cours', 'recalcul_stock');
 
 -- Traitement des données
 BEGIN TRY
     -- Recalcule uniquement les données modifiées
-    UPDATE inventory 
+    UPDATE inventory
     SET stock_quantity = stock_quantity - o.quantity
     FROM orders o
     WHERE o.updated_at >= (SELECT MAX(end_time) FROM batch_log WHERE batch_type = 'recalcul_stock' AND status = 'terminé');
@@ -110,27 +108,28 @@ Les batchs événementiels sont déclenchés par des événements tels qu'une mi
 
 ### Avantages des Batchs Événementiels
 
-* Réactivité accrue.
-* Optimisation des ressources.
-* Réduction de la latence.
+- Réactivité accrue.
+- Optimisation des ressources.
+- Réduction de la latence.
 
 ### Inconvénients des Batchs Événementiels
 
-* Complexité accrue.
-* Risque de surcharge en cas d'événements fréquents.
+- Complexité accrue.
+- Risque de surcharge en cas d'événements fréquents.
 
 ### Gestion des Batchs Événementiels
 
-* Implémenter des triggers ou des jobs planifiés.
-* Créer des files d'attente pour gérer les événements.
-* Définir des règles de gestion des erreurs et des retries.
+- Créer des files d'attente pour gérer les événements.
+- Définir des règles de gestion des erreurs et des retries.
+
+> ⚠️ L’utilisation directe de **triggers** pour lancer des jobs est déconseillée, car elle peut entraîner une surcharge du système et ne garantit pas un ordre cohérent d’exécution des transactions.
 
 ### Exemple de Batch Événementiel
 
 Dans Oracle et SQL Server, il est possible de déclencher des batchs en réponse à des événements spécifiques, offrant une flexibilité accrue dans la gestion des traitements.
 
 **Oracle :**
-Dans Oracle, les batchs peuvent être déclenchés à l'aide de triggers, de jobs planifiés via Oracle Scheduler ou encore via Oracle AQ (Advanced Queuing).
+Dans Oracle, les batchs peuvent être déclenchés à l'aide de jobs planifiés via Oracle Scheduler ou encore via Oracle AQ (Advanced Queuing).
 
 1. **Déclenchement par Oracle Scheduler :**
    Un job peut être configuré pour s'exécuter lorsqu'une table est modifiée ou lorsqu'un événement spécifique est enregistré.
@@ -205,33 +204,38 @@ END;
 Cette approche permet de découpler le déclenchement des batchs des événements eux-mêmes, offrant ainsi une architecture plus modulaire et plus facile à maintenir.
 
 **SQL Server :**
-Dans SQL Server, des batchs peuvent être déclenchés via des SQL Server Agent Jobs ou par l'utilisation de Service Broker pour réagir à des événements spécifiques, tels qu'une insertion, une mise à jour ou une suppression dans une table.
+Dans SQL Server, il est recommandé de s’appuyer sur une **table de staging ou Service Broker** plutôt que de déclencher directement un job via un trigger.
 
-Exemple :
+Exemple avec Service Broker :
 
 ```sql
-CREATE TRIGGER TriggerBatchExecution
-ON dbo.Orders
-AFTER INSERT, UPDATE
-AS
-BEGIN
-   EXEC msdb.dbo.sp_start_job N'BatchJobName';
-END;
+-- Création d'une file de messages
+CREATE QUEUE OrderUpdateQueue;
+
+-- Création d'un service lié à la file
+CREATE SERVICE OrderUpdateService
+ON QUEUE OrderUpdateQueue ([DEFAULT]);
+
+-- Lorsqu’un événement se produit, insérer un message dans la file
+SEND ON CONVERSATION @dialog_handle
+MESSAGE TYPE [DEFAULT]
+(N'ORDER_UPDATE: {"order_id": 123, "item_id": 1, "quantity": 5}');
 ```
 
-Ces approches permettent de combiner le traitement par batch avec des événements en temps réel, garantissant ainsi une exécution plus réactive tout en préservant la logique de traitement différé.
+Un batch peut ensuite lire les messages de la file, les traiter en lot et garantir un ordre et une cohérence.
 
+Cette approche est plus robuste que les triggers directs, car elle offre une meilleure scalabilité, un contrôle sur l’ordre de traitement et une résilience accrue en cas de surcharge.
 
 ## Comparaison des Batchs Temporels et Événementiels
 
-* Temporels : Exécution régulière, prévisible mais peut générer de la latence.
-* Événementiels : Réactifs, optimisés mais plus complexes à gérer.
+- Temporels : Exécution régulière, prévisible mais peut générer de la latence.
+- Événementiels : Réactifs, optimisés mais plus complexes à gérer.
 
 ## Gestion des Pannes
 
-* Timeout et retry pour les deux types de batchs.
-* Journalisation des opérations pour assurer le suivi des erreurs.
-* Redémarrage des batchs échoués sans compromettre la cohérence des données.
+- Timeout et retry pour les deux types de batchs.
+- Journalisation des opérations pour assurer le suivi des erreurs.
+- Redémarrage des batchs échoués sans compromettre la cohérence des données.
 
 ## Stratégie Recommandée : Stockage Intermédiaire des Modifications
 
@@ -239,27 +243,27 @@ L'application des nouvelles modifications doit suivre une stratégie qui vise à
 
 ### Objectif :
 
-* Éviter toute modification directe des tables sources.
-* Conserver les nouvelles valeurs dans une structure temporaire ou une table de staging.
-* Appliquer ces modifications de manière transactionnelle une fois que le batch a été entièrement validé.
+- Éviter toute modification directe des tables sources.
+- Conserver les nouvelles valeurs dans une structure temporaire ou une table de staging.
+- Appliquer ces modifications de manière transactionnelle une fois que le batch a été entièrement validé.
 
 ### Pourquoi cette stratégie ?
 
-* **Réversibilité :** Si le batch échoue, les modifications ne sont pas appliquées aux tables sources. Cela permet un retour arrière rapide sans affecter les données en production.
-* **Atomicité :** Les modifications ne sont appliquées qu'une fois l'ensemble du batch validé. En cas d'échec, aucune donnée partielle ou incomplète n'est insérée.
-* **Gestion des conflits :** Les conflits de données peuvent être identifiés et résolus dans la table de staging avant d'être appliqués aux tables sources.
-* **Performance :** Réduire le nombre d'opérations de lecture/écriture sur les tables sources permet de limiter les verrous transactionnels.
+- **Réversibilité :** Si le batch échoue, les modifications ne sont pas appliquées aux tables sources. Cela permet un retour arrière rapide sans affecter les données en production.
+- **Atomicité :** Les modifications ne sont appliquées qu'une fois l'ensemble du batch validé. En cas d'échec, aucune donnée partielle ou incomplète n'est insérée.
+- **Gestion des conflits :** Les conflits de données peuvent être identifiés et résolus dans la table de staging avant d'être appliqués aux tables sources.
+- **Performance :** Réduire le nombre d'opérations de lecture/écriture sur les tables sources permet de limiter les verrous transactionnels.
 
 ### Implémentation Technique :
 
-* Créer une **table de staging** pour stocker les modifications.
-* Mettre en place un **batch de traitement** qui :
+- Créer une **table de staging** pour stocker les modifications.
+- Mettre en place un **batch de traitement** qui :
 
-  * Récupère les données modifiées.
-  * Les insère ou met à jour dans la table de staging.
-  * Effectue les contrôles nécessaires (validation des données, gestion des conflits).
-  * Applique les modifications aux tables sources **uniquement si le batch est terminé avec succès**.
-  * Archive ou supprime les données de la table de staging une fois le traitement terminé.
+  - Récupère les données modifiées.
+  - Les insère ou met à jour dans la table de staging.
+  - Effectue les contrôles nécessaires (validation des données, gestion des conflits).
+  - Applique les modifications aux tables sources **uniquement si le batch est terminé avec succès**.
+  - Archive ou supprime les données de la table de staging une fois le traitement terminé.
 
 ### Exemple d'Implémentation :
 
@@ -317,10 +321,10 @@ END CATCH;
 
 ### Recommandations :
 
-* **Journalisation :** Conserver un log des opérations dans une table dédiée pour le suivi des traitements.
-* **Notifications :** Mettre en place des alertes en cas d’échec pour notifier les équipes responsables.
-* **Optimisation :** Prévoir des index sur la table de staging pour accélérer les jointures et les validations.
-* **Tests :** Effectuer des tests complets sur des environnements non productifs avant déploiement.
+- **Journalisation :** Conserver un log des opérations dans une table dédiée pour le suivi des traitements.
+- **Notifications :** Mettre en place des alertes en cas d’échec pour notifier les équipes responsables.
+- **Optimisation :** Prévoir des index sur la table de staging pour accélérer les jointures et les validations.
+- **Tests :** Effectuer des tests complets sur des environnements non productifs avant déploiement.
 
 ## Comparaison entre Batchs Événementiels et Triggers
 
@@ -330,27 +334,27 @@ Les triggers et les batchs événementiels sont deux mécanismes permettant d'ex
 
 1. **Scalabilité :**
 
-* Les triggers s'exécutent immédiatement et individuellement, ce qui peut provoquer des blocages et des verrous en cas de forte volumétrie.
-* Les batchs événementiels regroupent plusieurs événements et les traitent en lot, minimisant ainsi les conflits de verrouillage et optimisant les performances.
+- Les triggers s'exécutent immédiatement et individuellement, ce qui peut provoquer des blocages et des verrous en cas de forte volumétrie.
+- Les batchs événementiels regroupent plusieurs événements et les traitent en lot, minimisant ainsi les conflits de verrouillage et optimisant les performances.
 
 2. **Gestion des Erreurs :**
 
-* Les triggers font partie de la transaction principale. Si une erreur survient, toute la transaction peut échouer.
-* Les batchs événementiels stockent les modifications de manière temporaire et ne les appliquent qu'une fois validées, permettant des rollbacks plus fins et plus contrôlés.
+- Les triggers font partie de la transaction principale. Si une erreur survient, toute la transaction peut échouer.
+- Les batchs événementiels stockent les modifications de manière temporaire et ne les appliquent qu'une fois validées, permettant des rollbacks plus fins et plus contrôlés.
 
 3. **Réversibilité :**
 
-* Les triggers appliquent immédiatement les modifications, ce qui complique les retours en arrière.
-* Les batchs événementiels permettent de vérifier les modifications dans une table de staging avant de les appliquer, rendant le rollback plus facile.
+- Les triggers appliquent immédiatement les modifications, ce qui complique les retours en arrière.
+- Les batchs événementiels permettent de vérifier les modifications dans une table de staging avant de les appliquer, rendant le rollback plus facile.
 
 4. **Observabilité et Monitoring :**
 
-* Les triggers sont intégrés dans la logique transactionnelle de la base de données, rendant leur suivi plus complexe.
-* Les batchs événementiels peuvent être journalisés et monitorés indépendamment, offrant une meilleure traçabilité des opérations.
+- Les triggers sont intégrés dans la logique transactionnelle de la base de données, rendant leur suivi plus complexe.
+- Les batchs événementiels peuvent être journalisés et monitorés indépendamment, offrant une meilleure traçabilité des opérations.
 
 ### Exemples :
 
-* Avec Triggers :
+- Avec Triggers :
 
 ```sql
 CREATE TRIGGER UpdateStock
@@ -361,7 +365,7 @@ BEGIN
 END;
 ```
 
-* Avec Batch Événementiel :
+- Avec Batch Événementiel :
 
 1. Insertion dans la table de staging :
 
@@ -394,8 +398,8 @@ Dans certains cas, il est pertinent de permettre des modifications indépendante
 
 ### Pourquoi cette Approche ?
 
-* **Optimisation des Performances :** Les transactions atomiques peuvent être limitées aux champs critiques pour minimiser les verrous.
-* **Flexibilité :** Les champs non critiques peuvent être mis à jour indépendamment sans affecter la logique transactionnelle des champs critiques.
+- **Optimisation des Performances :** Les transactions atomiques peuvent être limitées aux champs critiques pour minimiser les verrous.
+- **Flexibilité :** Les champs non critiques peuvent être mis à jour indépendamment sans affecter la logique transactionnelle des champs critiques.
 
 ### Exemple :
 
@@ -441,6 +445,3 @@ Cette approche permet de combiner la flexibilité des mises à jour indépendant
 ## Conclusion
 
 Les batchs, qu'ils soient temporels ou événementiels, sont des outils puissants pour automatiser les traitements en backend. Les batchs temporels sont simples à mettre en œuvre mais peuvent générer de la latence, tandis que les batchs événementiels sont plus réactifs mais plus complexes à gérer. La clé est de choisir le type de batch en fonction des besoins spécifiques du traitement et des contraintes du système.
-
-
-
