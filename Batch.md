@@ -7,6 +7,7 @@
   - [Avantages des Batchs Temporels](#avantages-des-batchs-temporels)
   - [Inconvénients des Batchs Temporels](#inconvénients-des-batchs-temporels)
   - [Gestion des Batchs Temporels](#gestion-des-batchs-temporels)
+  - [Bonnes pratiques pour l’asynchronicité et les ressources partagées](#Bonnes-pratiques-pour-lasynchronicit-et-les-ressources-partagées)
   - [Exemple de Batch Temporel](#exemple-de-batch-temporel)
 
 - [Batchs Événementiels](#batchs-événementiels)
