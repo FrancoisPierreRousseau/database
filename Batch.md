@@ -27,7 +27,9 @@
 
 ## Introduction aux Batchs
 
-Les batchs sont des traitements automatisés exécutés soit à des intervalles de temps réguliers (batchs temporels), soit en réponse à des événements spécifiques (batchs événementiels). Ils permettent de traiter des volumes importants de données tout en minimisant l'impact sur le système.
+Les batchs sont des traitements automatisés exécutés soit à des intervalles de temps réguliers (**batchs temporels**), soit en réponse à des événements spécifiques (**batchs événementiels**). Ils permettent de traiter des volumes importants de données tout en minimisant l'impact sur le système.
+
+**Remarque importante :** l’ordre des transactions est critique pour certains traitements métier. Les batchs temporels **ne garantissent pas l’ordre de traitement** si plusieurs batchs sont lancés pour des traitements différents. Pour assurer la cohérence, les queues ou files d’attente restent la meilleure approche.
 
 ## Batchs Temporels
 
@@ -46,12 +48,14 @@ Les batchs temporels s'exécutent à des intervalles réguliers, par exemple tou
 - Charge serveur accrue.
 - Risque de chevauchement des batchs.
 - Gestion complexe des conflits de données.
+- **Ne garantit pas l’ordre des transactions** si plusieurs batchs métier sont exécutés simultanément.
 
 ### Gestion des Batchs Temporels
 
 - Vérifier l'achèvement des batchs précédents avant de lancer un nouveau batch.
 - Limiter le traitement aux données modifiées (basé sur un champ `updated_at`).
 - Implémenter des mécanismes de timeout et de retry.
+- Pour plusieurs traitements métier critiques, **préférer une approche événementielle avec queue** plutôt que des batchs temporels simultanés.
 
 ### Exemple de Batch Temporel
 
@@ -106,11 +110,14 @@ END CATCH;
 
 Les batchs événementiels sont déclenchés par des événements tels qu'une mise à jour de données ou une insertion dans une table.
 
+**Avantage clé :** ils permettent de garantir **l’ordre de traitement des transactions** via des queues, ce qui est essentiel pour la cohérence des traitements métier critiques.
+
 ### Avantages des Batchs Événementiels
 
 - Réactivité accrue.
 - Optimisation des ressources.
 - Réduction de la latence.
+- **Maintien de l’ordre des transactions** grâce aux files d’attente.
 
 ### Inconvénients des Batchs Événementiels
 
@@ -119,8 +126,9 @@ Les batchs événementiels sont déclenchés par des événements tels qu'une mi
 
 ### Gestion des Batchs Événementiels
 
-- Créer des files d'attente pour gérer les événements.
+- Créer des files d’attente pour gérer les événements.
 - Définir des règles de gestion des erreurs et des retries.
+- Les queues garantissent un traitement ordonné et fiable des événements, même en cas de surcharge.
 
 > ⚠️ L’utilisation directe de **triggers** pour lancer des jobs est déconseillée, car elle peut entraîner une surcharge du système et ne garantit pas un ordre cohérent d’exécution des transactions.
 
@@ -228,8 +236,14 @@ Cette approche est plus robuste que les triggers directs, car elle offre une mei
 
 ## Comparaison des Batchs Temporels et Événementiels
 
-- Temporels : Exécution régulière, prévisible mais peut générer de la latence.
-- Événementiels : Réactifs, optimisés mais plus complexes à gérer.
+| Critère                          | Batch Temporel              | Batch Événementiel avec Queue |
+| -------------------------------- | --------------------------- | ----------------------------- |
+| Exécution                        | Régulière, prévisible       | Sur événement                 |
+| Latence                          | Peut être élevée            | Faible                        |
+| Complexité                       | Simple                      | Plus complexe                 |
+| Scalabilité                      | Moyenne si batchs multiples | Excellente                    |
+| Ordre des transactions           | **Non garanti**             | **Garanti grâce à la queue**  |
+| Adapté aux traitements critiques | ❌                          | ✅                            |
 
 ## Gestion des Pannes
 
