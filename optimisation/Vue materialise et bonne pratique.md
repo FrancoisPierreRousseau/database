@@ -140,7 +140,61 @@ Il est illusoire de vouloir redévelopper le _Fast Refresh_ d’Oracle dans SQL 
 
 ---
 
-## 7. Conclusion
+## 7. Contraintes générales des vues matérialisées / indexées
+
+### Oracle (Materialized Views)
+
+- **WITH clauses (CTE)** :
+
+  - **Non supportées dans la plupart des cas** pour les vues matérialisées.
+  - Les CTE (`WITH ... AS`) ne peuvent généralement pas être matérialisées directement. Il faut intégrer la requête CTE dans le `SELECT` principal ou créer une sous-requête inline.
+
+- **Autres contraintes importantes** :
+
+  - Les vues ne peuvent pas inclure **`DISTINCT` combiné avec certaines fonctions analytiques complexes** si Fast Refresh est utilisé.
+  - Certaines fonctions comme `ROWNUM`, `SYSDATE`, ou des fonctions non déterministes rendent la vue non rafraîchissable en mode Fast Refresh.
+  - Les vues matérialisées avec **joins complexes multi-niveaux** ou agrégations sur des colonnes calculées doivent parfois passer en **Complete Refresh**.
+
+### SQL Server (Indexed Views)
+
+- **WITH clauses (CTE)** :
+
+  - **Pas supportées** dans une Indexed View. Les vues indexées doivent être basées sur des `SELECT` simples, avec des jointures et agrégations limitées.
+
+- **Autres contraintes** :
+
+  - Pas de `DISTINCT`, pas de sous-requêtes corrélées complexes dans la vue indexée.
+  - Les fonctions non déterministes (`GETDATE()`, `NEWID()`, etc.) ne sont pas autorisées.
+  - Les vues doivent être **SCHEMABINDING** (lié au schéma des tables sources).
+  - Les agrégations doivent utiliser uniquement `COUNT_BIG`, `SUM`, `MIN`, `MAX`.
+
+---
+
+## 8. Règle pratique
+
+💡 **En résumé** :
+
+- Les vues matérialisées et indexées sont **puissantes mais rigides**.
+- Elles **ne supportent pas** les constructions SQL complexes comme :
+
+  - CTE (`WITH`),
+  - sous-requêtes corrélées complexes,
+  - fonctions non déterministes.
+
+- Il faut **simplifier la requête** pour qu’elle soit compatible avec le moteur et le mode de rafraîchissement.
+
+---
+
+## 9. Bonnes pratiques
+
+1. **Intégrer les CTE comme sous-requêtes inline** si possible.
+2. **Éviter les fonctions non déterministes** dans les vues matérialisées ou indexées.
+3. **Tester Fast Refresh / Indexed View** dès la conception pour vérifier la compatibilité.
+4. **Documenter toutes les contraintes** pour les développeurs qui vont utiliser la vue.
+
+---
+
+## 10. Conclusion
 
 - Les vues matérialisées sont des **outils puissants**, mais leur implémentation diffère entre Oracle et SQL Server.
 - Oracle propose un **Fast Refresh** pour minimiser la latence et le coût des DML.
