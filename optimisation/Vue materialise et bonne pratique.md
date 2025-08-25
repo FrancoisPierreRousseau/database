@@ -30,12 +30,12 @@ Oracle propose un mécanisme très avancé de vues matérialisées :
 SQL Server ne possède pas de "vues matérialisées" au sens Oracle, mais l’équivalent s’appelle une **Indexed View** (vue indexée) :
 
 - **Création** : la vue est définie, puis matérialisée grâce à un index clusterisé unique.
-- **Rafraîchissement** : contrairement à Oracle, SQL Server **rafraîchit systématiquement la vue à chaque modification des tables sources**.
+- **Rafraîchissement** : contrairement à Oracle, SQL Server **ne propose pas de mécanisme de rafraîchissement différé**.
+  - La vue indexée est **toujours maintenue de manière incrémentielle et synchrone** : chaque `INSERT`, `UPDATE`, ou `DELETE` sur les tables sources entraîne immédiatement la mise à jour de la vue.
+  - Il n’existe pas de mode « Complete Refresh » manuel ni de « Fast Refresh » différé comme dans Oracle.
+  - Les données sont **toujours cohérentes en temps réel** avec les tables sources, mais au prix d’un coût supplémentaire sur les écritures.
 
-  - Il n’y a **pas de Fast Refresh**.
-  - Les données apparaissent normalement immédiatement, sauf si des transactions longues ou des verrous ralentissent l’actualisation.
-
-👉 Dans SQL Server, les _Indexed Views_ accélèrent la lecture mais peuvent **dégrader fortement les performances des écritures** sur les tables sources.
+👉 Dans SQL Server, les _Indexed Views_ accélèrent la lecture mais peuvent **alourdir les DML (INSERT/UPDATE/DELETE)** car chaque modification doit aussi mettre à jour la vue indexée.
 
 ---
 
