@@ -41,12 +41,12 @@ SQL Server ne possède pas de "vues matérialisées" au sens Oracle, mais l’é
 
 ## 4. Différences majeures Oracle vs SQL Server
 
-| Aspect               | Oracle                                          | SQL Server                          |
-| -------------------- | ----------------------------------------------- | ----------------------------------- |
-| Nom                  | Materialized View                               | Indexed View                        |
-| Rafraîchissement     | Fast Refresh (incrémental) ou Complete Refresh  | Toujours complet et automatique     |
-| Performance écriture | Impact limité si Fast Refresh                   | Impact direct sur chaque DML        |
-| Flexibilité          | Très élevé (logs, refresh programmés, partiels) | Moins flexible (toujours synchrone) |
+| Aspect               | Oracle                                          | SQL Server                                  |
+| -------------------- | ----------------------------------------------- | ------------------------------------------- |
+| Nom                  | Materialized View                               | Indexed View                                |
+| Rafraîchissement     | Fast Refresh (incrémental) ou Complete Refresh  | Incrémentiel et synchrone (toujours à jour) |
+| Performance écriture | Impact limité si Fast Refresh                   | Impact direct sur chaque DML                |
+| Flexibilité          | Très élevé (logs, refresh programmés, partiels) | Moins flexible (toujours synchrone)         |
 
 👉 **Point clé** :
 Il est illusoire de vouloir redévelopper le _Fast Refresh_ d’Oracle dans SQL Server. Cela demanderait une gestion manuelle des logs et des synchronisations complexes, et ne rattraperait pas 20 ans de R\&D Oracle.
