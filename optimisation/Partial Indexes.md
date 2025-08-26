@@ -36,6 +36,7 @@ WHERE est_archive = 0; -- Oracle/SQL Server
 -- SQL Server
 CREATE INDEX idx_statut_D
 ON dossiers(id_dossier)
+INCLUDE (nom)
 WHERE statut = 'D';
 ```
 
