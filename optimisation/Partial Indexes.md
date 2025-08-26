@@ -6,6 +6,7 @@ Un **index partiel** (ou index filtré) est un index qui ne couvre **qu'un sous-
 
 **Objectif :**
 
+- Réduire le scan complet de la table pour les requêtes ciblant ce sous-ensemble.
 - Optimiser les **lectures** sur des sous-ensembles fréquemment interrogés.
 - Réduire le coût des **écritures** en excluant les lignes rarement utilisées.
 - Limiter l'espace disque utilisé par l'index.
