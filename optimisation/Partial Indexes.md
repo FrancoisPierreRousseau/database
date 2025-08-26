@@ -17,6 +17,7 @@ Un **index partiel** (ou index filtré) est un index qui ne couvre **qu'un sous-
 -- Index sur les dossiers non archivés
 CREATE INDEX idx_non_archive
 ON dossiers(id_dossier)
+INCLUDE (nom)
 WHERE est_archive = 0; -- Oracle/SQL Server
 ```
 
